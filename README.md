@@ -1,5 +1,8 @@
 # Open-source LIMS
 
+[![CI](https://github.com/Chunling1/opensource-lims/actions/workflows/ci.yml/badge.svg)](https://github.com/Chunling1/opensource-lims/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+
 面向实验室业务的开源 LIMS 基础项目，从**样品领取、报告编制与送审**这一条业务链开始。
 
 **Flask · SQLAlchemy · Vue 3 · TypeScript · Tabler · Apache-2.0**
