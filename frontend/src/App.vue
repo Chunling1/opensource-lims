@@ -5,8 +5,8 @@ import { useRoute, useRouter } from 'vue-router'
 import ShellMenus from './ShellMenus.vue'
 import {
   IconFlask2,
-  IconFileDescription,
-  IconClipboardList,
+  IconEye,
+  IconEyeOff,
   IconMenu2,
   IconSearch,
   IconListCheck,
@@ -16,11 +16,12 @@ import {
 const route = useRoute(),
   router = useRouter()
 const mobileNav = ref(false)
-const modules = [
-  { name: 'tasks', title: '我的待办', icon: IconListCheck },
-  { name: 'samples', title: '检测样品', icon: IconClipboardList },
-  { name: 'reports', title: '检测报告', icon: IconFileDescription },
+const groupItems = [
+  { name: 'samples', title: '检测样品' },
+  { name: 'reports', title: '检测报告' },
 ] as const
+const navOpen = ref(true)
+const showPassword = ref(false)
 const user = ref<User | null>(null)
 const ready = ref(false),
   busy = ref(false),
@@ -119,44 +120,75 @@ watch(
 onUnmounted(hideToast)
 </script>
 <template>
-  <div v-if="ready && !user" class="page page-center">
-    <div class="container container-tight py-4">
-      <div class="text-center mb-4">
-        <span class="navbar-brand navbar-brand-autodark gap-2"
-          ><span class="avatar bg-primary text-white"><IconFlask2 /></span
-          ><span class="h2 mb-0">实验室工作台</span></span
-        >
-      </div>
-      <form class="card card-md" autocomplete="off" @submit.prevent="login">
-        <div class="card-body">
-          <h1 class="h2 text-center mb-4">登录工作台</h1>
-          <div class="mb-3">
-            <label class="form-label" for="account">账号</label
-            ><input id="account" class="form-control" v-model="account" autocomplete="username" required />
+  <div v-if="ready && !user" class="page page-center bg-primary-lt min-vh-100">
+    <div class="container container-narrow py-4">
+      <div class="card card-md overflow-hidden">
+        <div class="row g-0">
+          <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-between bg-primary text-white p-5" data-bs-theme="dark">
+            <div class="d-flex align-items-center gap-2">
+              <span class="avatar bg-white text-primary"><IconFlask2 /></span
+              ><span class="h2 mb-0 text-white">实验室工作台</span>
+            </div>
+            <div>
+              <div class="h1 text-white mb-3">检测业务一处办理</div>
+              <ul class="list-unstyled lead text-white-50 mb-0">
+                <li class="mb-2"><IconCircleCheck class="icon me-2" />样品领取、转交与退回</li>
+                <li class="mb-2"><IconCircleCheck class="icon me-2" />原始记录与待签报告上传</li>
+                <li><IconCircleCheck class="icon me-2" />送审与站内待办提醒</li>
+              </ul>
+            </div>
+            <div class="text-white-50">LIMS 基础版 · v0.1</div>
           </div>
-          <div class="mb-2">
-            <label class="form-label" for="password">密码</label
-            ><input
-              id="password"
-              class="form-control"
-              type="password"
-              v-model="password"
-              autocomplete="current-password"
-              required
-            />
-          </div>
-          <div v-if="error" class="alert alert-danger mt-3 mb-0" role="alert">
-            <div class="alert-icon"><IconX class="icon alert-icon" /></div>
-            <div>{{ error }}</div>
-          </div>
-          <div class="form-footer">
-            <button class="btn btn-primary w-100" :disabled="busy">
-              <span v-if="busy" class="spinner-border spinner-border-sm me-2"></span>登录
-            </button>
+          <div class="col-12 col-lg-6 d-flex flex-column justify-content-center">
+            <form class="card-body p-5" autocomplete="off" @submit.prevent="login">
+              <div class="d-lg-none text-center mb-4">
+                <span class="navbar-brand gap-2"
+                  ><span class="avatar bg-primary text-white"><IconFlask2 /></span
+                  ><span class="h2 mb-0">实验室工作台</span></span
+                >
+              </div>
+              <h1 class="h2 mb-1">登录工作台</h1>
+              <p class="text-secondary mb-4">请使用实验室分配的账号登录。</p>
+              <div class="mb-3">
+                <label class="form-label" for="account">账号</label
+                ><input id="account" class="form-control" v-model="account" autocomplete="username" required />
+              </div>
+              <div class="mb-2">
+                <label class="form-label" for="password">密码</label>
+                <div class="input-group input-group-flat">
+                  <input
+                    id="password"
+                    class="form-control"
+                    :type="showPassword ? 'text' : 'password'"
+                    v-model="password"
+                    autocomplete="current-password"
+                    required
+                  /><span class="input-group-text"
+                    ><button
+                      type="button"
+                      class="btn btn-link link-secondary p-0"
+                      :aria-label="showPassword ? '隐藏明文' : '显示明文'"
+                      :aria-pressed="showPassword"
+                      @click="showPassword = !showPassword"
+                    >
+                      <component :is="showPassword ? IconEyeOff : IconEye" class="icon" /></button
+                  ></span>
+                </div>
+              </div>
+              <div v-if="error" class="alert alert-danger mt-3 mb-0" role="alert">
+                <div class="alert-icon"><IconX class="icon alert-icon" /></div>
+                <div>{{ error }}</div>
+              </div>
+              <div class="form-footer">
+                <button class="btn btn-primary w-100" :disabled="busy">
+                  <span v-if="busy" class="spinner-border spinner-border-sm me-2"></span>登录
+                </button>
+              </div>
+              <div class="text-center text-secondary mt-4">仅限授权人员使用</div>
+            </form>
           </div>
         </div>
-      </form>
-      <div class="text-center text-secondary mt-3">LIMS 基础版 · 仅限授权人员使用</div>
+      </div>
     </div>
   </div>
 
@@ -196,21 +228,45 @@ onUnmounted(hideToast)
             />
           </div>
           <ul class="navbar-nav pt-lg-2">
-            <li class="nav-item"><span class="subheader px-3 pt-2 pb-1">工作台</span></li>
-            <template v-for="m in modules" :key="m.name">
-              <li v-if="m.name === 'samples' && !isCatalog" class="nav-item">
-                <span class="subheader px-3 pt-3 pb-1">检测工作</span>
-              </li>
-              <li v-if="m.name === 'tasks' || !isCatalog" class="nav-item" :class="{ active: active === m.name }">
-                <RouterLink class="nav-link" :to="{ name: m.name }"
-                  ><span class="nav-link-icon"><component :is="m.icon" class="icon" /></span
-                  ><span class="nav-link-title">{{ m.title }}</span
-                  ><span v-if="counts && badges[m.name]" class="badge badge-sm bg-white text-primary ms-auto">{{
+            <li class="nav-item" :class="{ active: active === 'tasks' }">
+              <RouterLink class="nav-link" :to="{ name: 'tasks' }"
+                ><span class="nav-link-icon"><IconListCheck class="icon" /></span
+                ><span class="nav-link-title">我的待办</span
+                ><span v-if="counts && badges.tasks" class="badge badge-sm bg-white text-primary position-static ms-auto">{{
+                  badges.tasks
+                }}</span></RouterLink
+              >
+            </li>
+            <li
+              v-if="!isCatalog"
+              class="nav-item dropdown"
+              :class="{ active: active === 'samples' || active === 'reports' }"
+            >
+              <a
+                href="#"
+                class="nav-link dropdown-toggle"
+                :class="{ show: navOpen }"
+                role="button"
+                aria-controls="nav-detection"
+                :aria-expanded="navOpen"
+                @click.prevent="navOpen = !navOpen"
+                ><span class="nav-link-icon"><IconFlask2 class="icon" /></span
+                ><span class="nav-link-title">检测管理</span></a
+              >
+              <div id="nav-detection" class="dropdown-menu" :class="{ show: navOpen }">
+                <RouterLink
+                  v-for="m in groupItems"
+                  :key="m.name"
+                  class="dropdown-item"
+                  :class="{ active: active === m.name }"
+                  :to="{ name: m.name }"
+                  >{{ m.title
+                  }}<span v-if="counts && badges[m.name]" class="badge badge-sm bg-white text-primary ms-auto">{{
                     badges[m.name]
                   }}</span></RouterLink
                 >
-              </li>
-            </template>
+              </div>
+            </li>
           </ul>
         </div>
       </div>
@@ -251,7 +307,7 @@ onUnmounted(hideToast)
         <div class="container-xl text-secondary">LIMS 基础版 · v0.1</div>
       </footer>
     </div>
-    <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
       <div v-if="toast" class="toast show" role="status" aria-live="polite">
         <div class="toast-header">
           <IconCircleCheck class="icon text-success me-2" /><strong class="me-auto">操作完成</strong

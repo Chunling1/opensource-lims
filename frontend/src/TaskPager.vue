@@ -28,10 +28,8 @@ function go(page: number, size = p.size) {
     >
     <nav class="ms-auto" aria-label="分页">
       <ul class="pagination pagination-sm mb-0">
-        <li class="page-item">
-          <button class="page-link" :disabled="page <= 1" @click="go(page - 1)" aria-label="上一页">
-            ‹
-          </button>
+        <li class="page-item" :class="{ disabled: page <= 1 }">
+          <button class="page-link" :disabled="page <= 1" @click="go(page - 1)">上一页</button>
         </li>
         <template v-for="(n, i) in pages" :key="n"
           ><li v-if="i && n > pages[i - 1] + 1" class="page-item disabled">
@@ -47,15 +45,8 @@ function go(page: number, size = p.size) {
             </button>
           </li></template
         >
-        <li class="page-item">
-          <button
-            class="page-link"
-            :disabled="page >= last"
-            @click="go(page + 1)"
-            aria-label="下一页"
-          >
-            ›
-          </button>
+        <li class="page-item" :class="{ disabled: page >= last }">
+          <button class="page-link" :disabled="page >= last" @click="go(page + 1)">下一页</button>
         </li>
       </ul>
     </nav>

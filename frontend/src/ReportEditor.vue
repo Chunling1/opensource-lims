@@ -72,7 +72,7 @@ function selectFile(e: Event) {
     </div>
     <ol
       v-if="report.state !== 'cancelled'"
-      class="steps steps-counter my-4"
+      class="steps steps-counter border-0 ms-0 ps-0 my-4"
       aria-label="报告编制进度"
     >
       <li

@@ -138,7 +138,7 @@ async function act(action: string, values: Fields = {}) {
       />
     </section>
     <div v-if="!rid" class="row row-cards"
-      ><div class="col-lg-7"><section class="card h-100">
+      ><div :class="sample.reports.length || 'create' in sample.actions ? 'col-lg-7' : 'col-12'"><section class="card h-100">
         <div class="card-header">
           <h2 class="card-title">{{ sample.name }} · {{ sample.number }}</h2>
         </div>
