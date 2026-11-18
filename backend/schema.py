@@ -1,0 +1,140 @@
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    func,
+)
+
+metadata = MetaData()
+
+users = Table(
+    "users",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("account", String(40), unique=True, nullable=False),
+    Column("name", String(60), nullable=False),
+    Column("department", String(80), nullable=False),
+    Column("data_scope", String(16), nullable=False, server_default="department"),
+    Column("password_hash", String(256), nullable=False),
+    Column("permissions", JSON, nullable=False),
+)
+grants = Table(
+    "technical_grants",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", ForeignKey("users.id"), nullable=False),
+    Column("duty", String(12), nullable=False),
+    Column("scope", String(100), nullable=False),
+    Column("start", Date, nullable=False),
+    Column("end", Date, nullable=False),
+)
+templates = Table(
+    "template_versions",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("label", String(80), nullable=False),
+    Column("review_mode", String(12), nullable=False),
+    Column("physical", Boolean, nullable=False),
+    Column("receive_required", Boolean, nullable=False),
+)
+samples = Table(
+    "samples",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("number", String(40), nullable=False, unique=True),
+    Column("name", String(100), nullable=False),
+    Column("commission", String(40), nullable=False),
+    Column("department", String(80), nullable=False),
+    Column("template_id", ForeignKey("template_versions.id"), nullable=False),
+    Column("reviewed", Boolean, nullable=False),
+    Column("received", Boolean, nullable=False),
+    Column("received_date", Date),
+    Column("commission_date", Date, nullable=False),
+    Column("site_date", Date),
+    Column("frozen", Boolean, nullable=False),
+    Column("owner", ForeignKey("users.id")),
+    Column("version", Integer, nullable=False),
+)
+items = Table(
+    "sample_items",
+    metadata,
+    Column("sample_id", ForeignKey("samples.id"), primary_key=True),
+    Column("scope", String(100), primary_key=True),
+)
+sequences = Table(
+    "number_rules",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("prefix", String(30), unique=True, nullable=False),
+    Column("last", Integer, nullable=False),
+)
+reports = Table(
+    "reports",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("sample_id", ForeignKey("samples.id"), nullable=False, index=True),
+    Column("number", String(64), unique=True, nullable=False),
+    Column("version", Integer, nullable=False, server_default="1"),
+    Column("state", String(20), nullable=False),
+    Column("start", Date),
+    Column("end", Date),
+    Column("reviewer", ForeignKey("users.id")),
+    Column("snapshot", JSON),
+)
+files = Table(
+    "report_files",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("report_id", ForeignKey("reports.id"), nullable=False, index=True),
+    Column("kind", String(15), nullable=False),
+    Column("key", String(40), unique=True, nullable=False),
+    Column("name", String(255), nullable=False),
+    Column("sha256", String(64), nullable=False),
+    Column("size", Integer, nullable=False),
+    Column("replaces", ForeignKey("report_files.id"), unique=True),
+    Column("by_user", ForeignKey("users.id"), nullable=False),
+    Column("created", DateTime(timezone=True), nullable=False),
+)
+events = Table(
+    "action_history",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("sample_id", ForeignKey("samples.id"), nullable=False),
+    Column("report_id", ForeignKey("reports.id")),
+    Column("actor", ForeignKey("users.id"), nullable=False),
+    Column("action", String(30), nullable=False),
+    Column("at", DateTime(timezone=True), nullable=False),
+    Column("payload", JSON, nullable=False),
+    Column("request_id", String(36), nullable=False),
+    Column("fingerprint", String(64), nullable=False),
+    UniqueConstraint("actor", "request_id"),
+)
+tasks = Table(
+    "tasks",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("sample_id", ForeignKey("samples.id"), nullable=False),
+    Column("report_id", ForeignKey("reports.id")),
+    Column("kind", String(20), nullable=False),
+    Column("assigned", ForeignKey("users.id")),
+    Column("arrived", DateTime(timezone=True), default=func.now()),
+    Column("closed", Boolean, nullable=False),
+)
+notices = Table(
+    "notices",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("report_id", ForeignKey("reports.id"), nullable=False),
+    Column("audience", String(40), nullable=False),
+    Column("message", Text, nullable=False),
+    UniqueConstraint("report_id", "audience"),
+)

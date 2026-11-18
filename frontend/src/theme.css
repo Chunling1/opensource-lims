@@ -1,0 +1,10 @@
+:root,
+[data-bs-theme] {
+  --tblr-primary: #405189;
+  --tblr-primary-rgb: 64, 81, 137;
+  --tblr-primary-darken: #33416e;
+  --tblr-link-color: var(--tblr-primary);
+  --tblr-link-color-rgb: var(--tblr-primary-rgb);
+  --tblr-link-hover-color: var(--tblr-primary-darken);
+  --tblr-link-hover-color-rgb: 51, 65, 110;
+}
