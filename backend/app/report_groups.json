@@ -1,0 +1,122 @@
+{
+  "department": "空调设备检测部",
+  "departmentAliases": [
+    "空调设备检测部（净化）",
+    "空调设备检测部（空调工程）",
+    "空调及制冷设备检测室（示例站点E）",
+    "空调设备检测部（热湿）",
+    "空调设备检测部（通风）",
+    "风速、压力校准实验室",
+    "焓差实验室校准",
+    "温度校准实验室",
+    "粒子计数器、粉尘仪校准实验室"
+  ],
+  "groups": [
+    {
+      "value": "净化组",
+      "codes": [
+        "IAQ",
+        "WQ",
+        "JQ",
+        "JHJ",
+        "SH",
+        "AC",
+        "H",
+        "ZX",
+        "LL",
+        "JJ",
+        "SW",
+        "RP"
+      ]
+    },
+    {
+      "value": "通风组",
+      "codes": [
+        "FJ",
+        "S",
+        "V",
+        "D",
+        "VAV",
+        "VL",
+        "YCJ",
+        "FU",
+        "ME",
+        "EV"
+      ]
+    },
+    {
+      "value": "校准组",
+      "codes": [
+        "HC",
+        "WD",
+        "PC",
+        "FC",
+        "TCAC",
+        "FS",
+        "FZ",
+        "SY",
+        "RX",
+        "LX",
+        "HX",
+        "ZY"
+      ]
+    },
+    {
+      "value": "工程组",
+      "codes": [
+        "JG(II)",
+        "G(II)"
+      ]
+    },
+    {
+      "value": "热湿组",
+      "codes": [
+        "KA",
+        "K",
+        "F",
+        "R",
+        "JS",
+        "LR",
+        "HR",
+        "DN",
+        "C",
+        "MD",
+        "CA",
+        "LQ",
+        "M",
+        "W",
+        "CS",
+        "JF",
+        "HP",
+        "HK",
+        "CHP",
+        "BCCHP",
+        "BDCHP",
+        "BHCHP",
+        "CPCHP",
+        "DXCHP",
+        "FSCHP",
+        "HRCHP",
+        "MTGCHP",
+        "MYCHP",
+        "PGCHP",
+        "SYCHP",
+        "YQCHP",
+        "SYHP",
+        "SYR",
+        "SYC",
+        "SYHR"
+      ]
+    },
+    {
+      "value": "检验",
+      "codes": [
+        "JCHC",
+        "JCKJ",
+        "JCKT",
+        "JCGN",
+        "JCNY"
+      ]
+    }
+  ]
+}

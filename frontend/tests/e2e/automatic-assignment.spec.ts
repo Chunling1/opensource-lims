@@ -1,0 +1,172 @@
+import { test, expect, type Page } from '@playwright/test'
+
+async function automatic(page: Page, code = 'SP2026090051') {
+  await page.getByRole('button', { name: `${code} 更多操作`, exact: true }).click()
+  await page.getByRole('menuitem', { name: '自动分配', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '自动分配', exact: true })
+  await expect(dialog).toContainText(code)
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toBeHidden()
+}
+const tableName = { name: '检测任务分配列表', exact: true }
+
+test('automatic confirmation fits mobile dark theme and leaving before confirmation never submits', async ({ page }, info) => {
+  const writes: unknown[] = []
+  page.on('request', request => { if (request.url().endsWith('/assignment-action')) writes.push(request.postDataJSON()) })
+  await page.goto('/#/testing/assignment')
+  await page.getByRole('button', { name: '切换明暗模式', exact: true }).click()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'SP2026090051 更多操作', exact: true }).click()
+  await page.getByRole('menuitem', { name: '自动分配', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '自动分配', exact: true })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '确认', exact: true })).toBeEnabled()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: info.outputPath('automatic-confirmation-mobile-dark.png') })
+  expect(writes).toHaveLength(0)
+  await page.goto('/#/identity')
+  await page.getByRole('button', { name: '第二实验室检测员', exact: true }).click()
+  await page.goto('/#/testing/assignment')
+  await expect(page.getByRole('table', tableName)).toBeVisible()
+  await expect(dialog).toHaveCount(0)
+  expect(writes).toHaveLength(0)
+})
+
+test('confirmation can cancel without writing and submits once without preview after acceptance', async ({ page }, testInfo) => {
+  const actions: unknown[] = [], previews: string[] = []
+  page.on('request', request => {
+    if (request.url().endsWith('/assignment-action')) actions.push(request.postDataJSON())
+    if (request.url().endsWith('/assignment-preview')) previews.push(request.url())
+  })
+  await page.goto('/#/testing/assignment')
+  const table = page.getByRole('table', tableName)
+  await table.getByRole('checkbox').nth(1).check()
+  const dialog = page.getByRole('dialog', { name: '自动分配', exact: true })
+  for (const close of ['取消', '关闭弹窗', 'Escape']) {
+    await table.getByRole('button', { name: 'SP2026090051 更多操作', exact: true }).click()
+    await page.getByRole('menuitem', { name: '自动分配', exact: true }).click()
+    await expect(dialog).toContainText('SP2026090051')
+    await expect(dialog).toContainText('常规检测方案')
+    expect(actions).toHaveLength(0)
+    if (close === 'Escape') { await expect(dialog).toBeFocused(); await page.keyboard.press('Escape') }
+    else await dialog.getByRole('button', { name: close, exact: true }).click()
+    await expect(dialog).toBeHidden()
+    expect(actions).toHaveLength(0)
+    await expect(table.locator('tbody input:checked')).toHaveCount(1)
+  }
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/samples/demo-yp-51/assignment-action', async route => { const response = await route.fetch(); await gate; await route.fulfill({ response }) }, { times: 1 })
+  await automatic(page)
+  await expect(page.getByRole('status').filter({ hasText: '正在分配' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  for (const button of await table.getByRole('button', { name: /更多操作/ }).all()) await expect(button).toBeDisabled()
+  expect(actions).toEqual([{ action: 'auto', version: 1 }])
+  expect(previews).toHaveLength(0)
+  await page.screenshot({ path: testInfo.outputPath('automatic-in-progress.png') })
+  release()
+  await expect(page.getByRole('status').filter({ hasText: '样品 SP2026090051 自动分配成功' })).toBeVisible()
+  await expect(table).not.toContainText('SP2026090051')
+  await expect(table.locator('tbody input:checked')).toHaveCount(0)
+  const saved = await (await page.request.get('/api/registration/samples/demo-yp-51', { headers: { 'X-Demo-Actor': 'admin' } })).json()
+  expect(saved.assignmentInfo).toMatchObject({ assignedById: 'admin', recordedBy: { id: 'admin', name: '演示用户' }, dataEntryPersonId: 'analyst', tester1Id: 'analyst', tester2Id: '' })
+  expect(saved.events.at(-1).action).toBe('自动分配')
+  expect(actions).toHaveLength(1)
+  await page.screenshot({ path: testInfo.outputPath('automatic-success.png') })
+})
+
+test('preset failures offer the unchanged manual form on mobile dark theme', async ({ page }, testInfo) => {
+  await page.goto('/#/testing/assignment')
+  await page.getByRole('button', { name: '切换明暗模式', exact: true }).click()
+  await page.setViewportSize({ width: 390, height: 844 })
+  for (const message of ['该检测方案尚未配置自动分配人员，请手动分配。', '预设检测人1已不存在，请手动分配。', '预设检测人1与检测人2重复，请手动分配。']) {
+    await page.route('**/samples/demo-yp-51/assignment-action', route => route.fulfill({ status: 422, json: { error: { code: 'VALIDATION', message } } }), { times: 1 })
+    await automatic(page)
+    await expect(page.getByRole('alert')).toContainText(message)
+    await expect(page.getByRole('alert')).not.toContainText('诊断编号')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  }
+  await page.screenshot({ path: testInfo.outputPath('automatic-failure-mobile-dark.png') })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  await page.getByRole('button', { name: '手动分配', exact: true }).click()
+  const modal = page.getByRole('dialog', { name: '分配', exact: true })
+  await expect(modal.getByLabel('分配人工号')).toHaveValue('admin')
+  await expect(modal.getByLabel('分配人姓名')).toHaveValue('演示用户')
+  await expect(modal.getByLabel('分配日期')).toHaveValue(await page.evaluate(() => new Date().toLocaleDateString('sv-SE')))
+  for (const field of ['数据录入人', '检测人1', '检测人2']) await expect(modal.getByLabel(field)).toHaveValue('')
+  await modal.getByLabel('数据录入人').fill('analyst')
+  await modal.getByLabel('检测人1').fill('analyst')
+  const response = page.waitForResponse(response => response.url().endsWith('/assignment-action'))
+  await modal.getByRole('button', { name: '确认', exact: true }).click()
+  expect((await (await response).json()).events.at(-1).action).toBe('分配')
+  await expect(modal).toBeHidden()
+})
+
+test('lost response requires refreshing the actual state and never retries automatically', async ({ page }) => {
+  const writes: unknown[] = []
+  page.on('request', request => { if (request.url().endsWith('/assignment-action')) writes.push(request.postDataJSON()) })
+  await page.goto('/#/testing/assignment')
+  await page.route('**/samples/demo-yp-51/assignment-action', async route => { await route.fetch(); await route.abort('failed') }, { times: 1 })
+  await automatic(page)
+  await expect(page.getByRole('alert')).toContainText('核对最新状态')
+  await expect(page.getByRole('button', { name: '手动分配', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'SP2026090051 更多操作', exact: true })).toBeDisabled()
+  expect(writes).toHaveLength(1)
+  await page.getByRole('button', { name: '刷新列表', exact: true }).click()
+  await expect(page.getByRole('table', tableName)).not.toContainText('SP2026090051')
+  expect(writes).toHaveLength(1)
+})
+
+test('version conflicts and workflow changes after confirmation require refresh', async ({ page }) => {
+  await page.goto('/#/testing/assignment')
+  await expect(page.getByRole('table', tableName)).toContainText('SP2026090051')
+  const assigned = await page.request.post('/api/registration/samples/demo-yp-51/assignment-action', { headers: { 'X-Demo-Actor': 'admin' }, data: { action: 'auto', version: 1 } })
+  expect(assigned.ok()).toBe(true)
+  await automatic(page)
+  await expect(page.getByRole('alert')).toContainText('记录已更新')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.getByRole('button', { name: '刷新列表', exact: true }).click()
+  await expect(page.getByRole('table', tableName)).not.toContainText('SP2026090051')
+  await page.route('**/samples/demo-yp-53/assignment-action', route => route.fulfill({ status: 422, json: { error: { code: 'BUSINESS_RULE', message: '样品状态已不允许分配，请刷新列表。' } } }), { times: 1 })
+  await automatic(page, 'SP2026090053')
+  await expect(page.getByRole('alert')).toContainText('样品状态已不允许分配')
+  await expect(page.getByRole('button', { name: '手动分配', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '刷新列表', exact: true })).toBeVisible()
+})
+
+test('changing the query ignores late assignment feedback without overwriting the new list', async ({ page }) => {
+  await page.goto('/#/testing/assignment')
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/samples/demo-yp-51/assignment-action', async route => { const response = await route.fetch(); await gate; await route.fulfill({ response }) }, { times: 1 })
+  await automatic(page)
+  await expect(page.getByRole('status').filter({ hasText: '正在分配' })).toBeVisible()
+  const form = page.getByRole('form', { name: '检测任务分配条件' })
+  await form.getByLabel('包含', { exact: true }).fill('SP2026090055')
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await expect(page.getByRole('table', tableName).locator('tbody tr')).toHaveCount(1)
+  const response = page.waitForResponse(response => response.url().endsWith('/assignment-action'))
+  release()
+  await response
+  await expect(page.getByRole('status').filter({ hasText: '自动分配成功' })).toHaveCount(0)
+  await expect(page.getByRole('table', tableName)).toContainText('SP2026090055')
+  await expect(page.getByRole('table', tableName).locator('tbody tr')).toHaveCount(1)
+})
+
+test('leaving the page and switching identity suppress late success feedback', async ({ page }) => {
+  await page.goto('/#/testing/assignment')
+  let release = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/samples/demo-yp-51/assignment-action', async route => { const response = await route.fetch(); await gate; await route.fulfill({ response }) }, { times: 1 })
+  await automatic(page)
+  await expect(page.getByRole('status').filter({ hasText: '正在分配' })).toBeVisible()
+  await page.goto('/#/identity')
+  await page.getByRole('button', { name: '第二实验室检测员', exact: true }).click()
+  const response = page.waitForResponse(response => response.url().endsWith('/assignment-action'))
+  release()
+  await response
+  await page.goto('/#/testing/assignment')
+  await expect(page.getByRole('table', tableName)).not.toContainText('SP2026090051')
+  await expect(page.getByRole('status').filter({ hasText: '自动分配成功' })).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})

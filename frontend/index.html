@@ -1,12 +1,32 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-bs-theme="light">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>检测领取 · 实验室工作台</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="实验室信息管理系统 · 委托、样品、检测、报告、财务与质量" />
+    <title>LIMS · 实验室信息管理系统</title>
+    <link rel="icon" type="image/svg+xml" href="/branding/favicon.svg" sizes="any" />
+    <script type="module" src="/src/stores/theme/boot.ts"></script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main class="page page-center py-5 min-vh-100">
+        <div class="container container-tight text-center">
+          <div id="boot-pending" hidden>
+            <div id="preloader" hidden role="status" aria-label="正在加载工作空间">
+              <div class="spinner-border text-primary" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div id="boot-failed" hidden role="alert">
+            <h1>应用资源加载失败</h1>
+            <p>请检查连接后重新加载页面。本地业务数据不会被清除。</p>
+            <button id="boot-retry" type="button" class="btn btn-primary">重新加载</button>
+          </div>
+          <noscript>请启用 JavaScript 后重新加载。</noscript>
+        </div>
+      </main>
+    </div>
+    <script src="/boot-guard.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

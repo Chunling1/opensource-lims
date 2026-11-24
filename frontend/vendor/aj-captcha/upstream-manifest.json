@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/anji-plus/captcha",
+  "commit": "9188ae31cad1b2041277f04351cde4bf78a01fc4",
+  "sha256": {
+    "LICENSE": "20bcae93bc72bd5e6eb33e3a34b93094be49b1d48a1a71ae51a878157fbebacc",
+    "components\\Verify.vue": "63fcda564a7629531ba415763b71a206fdc0ef6906fc6430c980ad9f7829667a",
+    "components\\api\\index.js": "25762b1a0f1d4a762daf7631a1c638bb1eb4d0133f52bb1c3df0fe912d72141f",
+    "components\\utils\\ase.js": "cde167d84558c47867a207ada4cbf347762aa97cd7758518e40cb0083eb30e67",
+    "components\\utils\\axios.js": "588bb47851954dd82a60e08bba6e3f6e982d8b607e2c00bc2d9e6409221ebcdb",
+    "components\\utils\\util.js": "f1fb39ffea6cd630cfeda36b84f614ea4f403cfbebbd7dbf74d963b1bb684931",
+    "components\\Verify\\VerifyPoints.vue": "e97bff7e86d39500f2d87d4340fa760e7012398452b96ab807958806b217e810",
+    "components\\Verify\\VerifySlide.vue": "7553e6114f2808a1ecbe4a5a15c3fc129e8af6dada1cb2c66b6eebb399d2c106",
+    "images\\original\\1.png": "50262c20014cfd77ada485fc1af102c07e51f94889d12a6a75f6fd1ea811eca6",
+    "images\\original\\2.png": "74fb11a51c8038e75f82bfae7d4d4ce12dfc13f236d79918e8466b7bcd7933d0",
+    "images\\original\\3.png": "23514f3a8e22b16afc34fba3f8dbdd746d3ab006d702fbe242cad59add251f5a",
+    "images\\original\\4.png": "b83fcbc85058b3473e7c7ff75fcf26ce7dcbca191608ad0d533a6d2662f54c43",
+    "images\\original\\5.png": "9e0e26ac8f84498d86ae53cb665e50dbb779e6df323b39599363647db8c87d12",
+    "images\\original\\6.png": "bc7d2549d5d6afa6c8a584dd81504e5bceb9c32a27ab664622e39311db709e02",
+    "images\\original\\bg8.png": "ac952bfcf7d871e1b0e4417910ae4e781d86c404d956e34984e22ab9bb6dc984",
+    "images\\slidingBlock\\1.png": "a945687f04b1f3a8842d11913c691f94e2f2cc3540490ae8a6f518aff53ce228",
+    "images\\slidingBlock\\2.png": "2230e148fc47306f9224cc295693ebea1f4f71d29ea5241f354b5b93bd79a10c",
+    "images\\slidingBlock\\3.png": "d1d117daacb37b306122e16250a7f40cc90828e392e05de1b130ebfa7bc8a549",
+    "images\\slidingBlock\\4.png": "3d045a4b9db26f8930f2f2fe2ccee904c6d1fbaae64dd9c19edd6a6ecce86de2",
+    "images\\slidingBlock\\5.png": "dce514e1c787832f537576897843fe37729393d01125877ede5e7bf954ea3d64",
+    "images\\slidingBlock\\6.png": "edb14a4584be5da6de1e96974011477a1cb970b045892618b05f92b7a8b3b496"
+  }
+}

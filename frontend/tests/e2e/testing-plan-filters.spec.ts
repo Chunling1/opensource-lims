@@ -1,0 +1,42 @@
+import { test, expect } from '@playwright/test'
+
+for (const [scope, path, title] of [['assignment', 'assignment', '检测任务分配'], ['pickup', 'sample-pickup', '检测样品领取']]) {
+  test(`${scope} plan drawer applies only on query and restores committed selection`, async ({ page }) => {
+    const requests: Record<string, unknown>[] = []
+    page.on('request', request => { if (request.url().endsWith(`/samples/${scope}/query`)) requests.push(request.postDataJSON()) })
+    await page.goto(`/#/testing/${path}`)
+    const form = page.getByRole('form', { name: `${title}条件`, exact: true }), table = page.getByRole('table', { name: `${title}列表`, exact: true })
+    await expect(table.locator('tbody tr')).toHaveCount(scope === 'assignment' ? 10 : 3)
+    await expect(table.getByRole('columnheader', { name: '检测方案', exact: true })).toHaveCount(0)
+    const button = page.getByRole('button', { name: '检测方案', exact: true })
+    await button.click()
+    const drawer = page.getByRole('dialog', { name: '筛选检测方案', exact: true })
+    const group = scope === 'assignment' ? '综合检测部' : '风速、压力校准实验室'
+    await drawer.getByRole('checkbox', { name: `选择分组 ${group}`, exact: true }).click()
+    await expect(button).toHaveText('检测方案')
+    await expect(drawer.getByText('已选 1 项', { exact: true })).toBeVisible()
+    await drawer.getByRole('button', { name: '关闭', exact: true }).click()
+    await expect(button).toContainText('已选 1 项')
+    await expect(drawer).toBeHidden()
+    expect(requests).toHaveLength(1)
+    await expect(form.getByLabel('已选检测方案')).toBeVisible()
+    await form.getByRole('button', { name: '查询', exact: true }).click()
+    await expect(form.getByRole('button', { name: '查询', exact: true })).toBeEnabled()
+    expect(requests.at(-1)?.plans).toMatchObject({ groupIds: [], planIds: [scope === 'assignment' ? 'general-1' : 'pressure-1'] })
+    await page.reload()
+    await expect(button).toContainText('已选 1 项')
+    await button.click()
+    await drawer.getByRole('button', { name: '清空选择', exact: true }).click()
+    await expect(button).toContainText('已选 1 项')
+    await drawer.getByRole('button', { name: '关闭', exact: true }).click()
+    await expect(button).toHaveText('检测方案')
+    await form.getByRole('button', { name: '查询', exact: true }).click()
+    await expect(table.locator('tbody tr')).toHaveCount(scope === 'assignment' ? 10 : 3)
+    expect(requests.at(-1)?.plans).toEqual({ groupIds: [], planIds: [], excludedPlanIds: [] })
+    await page.getByRole('button', { name: '切换明暗模式', exact: true }).click()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await button.click()
+    await expect(drawer).toBeVisible()
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}

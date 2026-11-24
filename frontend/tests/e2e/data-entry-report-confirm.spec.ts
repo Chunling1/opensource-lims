@@ -1,0 +1,173 @@
+import { expect, test, type Page } from '@playwright/test'
+import { openReportFiles } from './helpers/reportFiles'
+
+const root = '/api/registration/samples/demo-yp-76/data-entry'
+const detail = async (page: Page) => (await page.request.get(root, { headers: { 'X-Demo-Actor': 'admin' } })).json()
+async function prepare(page: Page) {
+  await page.goto('/#/testing/data-entry/demo-yp-76/report')
+  await openReportFiles(page)
+  await page.getByRole('button', { name: '预览报告', exact: true }).click()
+  await expect(page.getByTitle('完整报告预览', { exact: true })).toBeVisible()
+}
+
+test('confirmation waits for a valid preview and stays available when switching steps', async ({ page }) => {
+  let generations = 0, confirmations = 0
+  page.on('request', request => {
+    if (request.method() !== 'POST') return
+    if (request.url().endsWith('/combine')) generations++
+    if (request.url().endsWith('/confirm-report')) confirmations++
+  })
+  await page.goto('/#/testing/data-entry/demo-yp-76/report')
+  const step = page.getByRole('tab', { name: '报告确认', exact: true })
+  await expect(step).toBeDisabled()
+  await expect(step).toHaveAccessibleDescription('报告预览就绪后可确认')
+  await step.evaluate(element => (element as HTMLButtonElement).click())
+  await expect(page.getByRole('tab', { name: '报告模板', exact: true })).toHaveAttribute('aria-selected', 'true')
+  expect(generations).toBe(0)
+  await page.getByRole('tab', { name: '报告预览', exact: true }).click()
+  await expect(page.getByTitle('完整报告预览', { exact: true })).toBeVisible()
+  await expect(step).toBeEnabled()
+  await expect(page.locator('#report-confirmation-hint')).toHaveCount(0)
+  expect(generations).toBe(1)
+  expect(confirmations).toBe(0)
+  await page.getByRole('tab', { name: '上传文件', exact: true }).click()
+  await expect(step).toBeEnabled()
+  await step.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: '报告填写已完成' })).toBeVisible()
+  expect(confirmations).toBe(1)
+  expect((await detail(page)).sample.dataStatus).toBe('检测数据录入中')
+  await step.click()
+  expect(confirmations).toBe(1)
+})
+
+test('readonly initial confirmation navigation never generates or confirms a report', async ({ page }) => {
+  let writes = 0
+  page.on('request', request => { if (request.method() === 'POST' && request.url().includes('/data-entry/')) writes++ })
+  await page.goto('/#/testing/data-entry/demo-yp-76/report?mode=view')
+  await expect(page.getByRole('tab', { name: '报告确认', exact: true })).toBeDisabled()
+  await page.getByRole('tab', { name: '报告预览', exact: true }).click()
+  await expect(page.getByText('报告未生成', { exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: '报告确认', exact: true })).toBeDisabled()
+  expect(writes).toBe(0)
+})
+
+test('four template stages confirm only the report, retain entry state, and restore the summary', async ({ page }, info) => {
+  await prepare(page)
+  const before = await detail(page)
+  let completions = 0, confirmations = 0
+  page.on('request', request => {
+    if (request.method() !== 'POST') return
+    if (request.url().endsWith('/complete')) completions++
+    if (request.url().endsWith('/confirm-report')) confirmations++
+  })
+  await expect(page.getByRole('tab')).toHaveText(['报告模板', '上传文件', '报告预览', '报告确认'])
+  await expect(page.getByRole('tab', { name: '报告确认', exact: true })).toBeEnabled()
+  await expect(page.locator('.step-arrow-nav i.rounded-circle')).toHaveCount(4)
+  await expect(page.locator('.checkout-tab .card')).toHaveCount(0)
+  const confirm = page.getByRole('button', { name: '报告确认', exact: true })
+  const pdfBox = await page.getByTitle('完整报告预览', { exact: true }).boundingBox()
+  expect((await confirm.boundingBox())!.y).toBeGreaterThan(pdfBox!.y + pdfBox!.height)
+  let release!: () => void
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/data-entry/confirm-report', async route => { await gate; await route.continue() })
+  await confirm.click()
+  await expect(page.getByRole('button', { name: '正在确认…', exact: true })).toBeDisabled()
+  await expect(page.getByRole('tab', { name: '报告模板', exact: true })).toBeDisabled()
+  release()
+  const summary = page.getByRole('tabpanel', { name: '报告确认', exact: true })
+  await expect(summary).toBeVisible()
+  await expect(page.getByRole('heading', { name: '报告填写已完成' })).toBeFocused()
+  const after = await detail(page)
+  expect(after.reportConfirmed).toBe(true)
+  expect(after.sample.dataStatus).toBe('检测数据录入中')
+  expect(after.sample.version).toBe(before.sample.version)
+  expect(after.form).toEqual(before.form)
+  expect(after.files).toEqual([])
+  expect(confirmations).toBe(1)
+  expect(completions).toBe(0)
+  const animatedIcon = summary.locator('lord-icon')
+  await expect.poll(() => animatedIcon.evaluate(element => (element as HTMLElement & { isReady: boolean }).isReady)).toBe(true)
+  const animationFrame = () => animatedIcon.evaluate(element => (element as HTMLElement & { player: { frame: number } }).player.frame)
+  const firstFrame = await animationFrame()
+  await expect.poll(animationFrame).not.toBe(firstFrame)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(animatedIcon).toHaveCount(0)
+  await expect(summary.locator('svg[width="120"]')).toBeVisible()
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await expect.poll(() => animatedIcon.evaluate(element => (element as HTMLElement & { isReady: boolean }).isReady)).toBe(true)
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => document.documentElement.setAttribute('data-bs-theme', theme), theme)
+      await page.screenshot({ path: info.outputPath(`report-summary-${width}-${theme}.png`), fullPage: true, animations: 'disabled' })
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    }
+  }
+  await page.reload()
+  await expect(summary).toBeVisible()
+  await page.getByRole('button', { name: '查看报告', exact: true }).click()
+  await expect(page.locator('lord-icon')).toHaveCount(0)
+  await expect(page.getByTitle('完整报告预览', { exact: true })).toBeVisible()
+  await confirm.click()
+  await expect(summary).toBeVisible()
+  expect(confirmations).toBe(1)
+  await page.getByRole('tab', { name: '报告模板', exact: true }).click()
+  await expect(page.getByLabel('首页版式', { exact: true })).toBeEnabled()
+  await page.getByLabel('首页版式', { exact: true }).selectOption('extended')
+  await page.getByRole('button', { name: '确认切换', exact: true }).click()
+  await expect(page.getByRole('tab', { name: '报告确认', exact: true })).toBeDisabled()
+  expect((await detail(page)).reportConfirmed).toBe(false)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: '报告预览', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(confirm).toBeDisabled()
+})
+
+test('uncertain report confirmation is reconciled without changing entry state or submitting twice; readonly can view the summary', async ({ page }) => {
+  await prepare(page)
+  let submissions = 0
+  await page.route('**/data-entry/confirm-report', async route => { submissions++; await route.fetch(); await route.abort() })
+  await page.getByRole('button', { name: '报告确认', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '报告填写已完成' })).toHaveCount(0)
+  await page.getByRole('button', { name: '刷新核对', exact: true }).click()
+  await expect(page.getByRole('tabpanel', { name: '报告确认', exact: true })).toBeVisible()
+  expect(submissions).toBe(1)
+  expect((await detail(page)).sample.dataStatus).toBe('检测数据录入中')
+  await page.goto('/#/testing/data-entry/demo-yp-76/report?mode=view')
+  await page.reload()
+  await expect(page.getByRole('tabpanel', { name: '报告确认', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '查看报告', exact: true }).click()
+  await expect(page.getByTitle('完整报告预览', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '报告确认', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: '查看报告确认', exact: true }).click()
+  await page.getByRole('button', { name: '返回列表', exact: true }).click()
+  await expect(page).toHaveURL(/#\/testing\/data-entry$/)
+})
+
+test('failed confirmation and stale results cannot enter summary; normal entry completion remains separate', async ({ page }) => {
+  await prepare(page)
+  const confirm = page.getByRole('button', { name: '报告确认', exact: true })
+  await page.route('**/data-entry/confirm-report', route => route.fulfill({ status: 422, json: { error: { code: 'BUSINESS_RULE', message: '请预览最新报告后再确认。' } } }))
+  await page.getByRole('tab', { name: '报告模板', exact: true }).click()
+  await page.getByRole('tab', { name: '报告确认', exact: true }).click()
+  await expect(page.getByRole('tab', { name: '报告模板', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('alert', { name: '报告确认提示' })).toContainText('请预览最新报告后再确认。')
+  await expect(page.getByRole('tab', { name: '报告确认', exact: true })).toBeEnabled()
+  await page.getByRole('tab', { name: '报告预览', exact: true }).click()
+  await expect(page.getByTitle('完整报告预览', { exact: true })).toBeVisible()
+  await page.unroute('**/data-entry/confirm-report')
+  await page.route('**/data-entry/confirm-report', route => route.fulfill({ status: 409, json: { error: { code: 'VERSION_CONFLICT', message: '资料已更新，请刷新核对。' } } }))
+  await confirm.click()
+  await page.getByRole('button', { name: '刷新核对', exact: true }).click()
+  await expect(page.getByRole('tab', { name: '报告预览', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await page.unroute('**/data-entry/confirm-report')
+  await confirm.click()
+  await page.getByRole('button', { name: '返回列表', exact: true }).click()
+  const row = page.getByRole('row').filter({ hasText: 'SP2026090076' })
+  await row.getByRole('button', { name: 'SP2026090076 更多操作', exact: true }).click()
+  await page.getByRole('menuitem', { name: '录入完成', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '录入完成', exact: true })
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toContainText('请检查试验信息。')
+  expect((await detail(page)).sample.dataStatus).toBe('检测数据录入中')
+})

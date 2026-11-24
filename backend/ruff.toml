@@ -1,0 +1,10 @@
+# ruff 配置（开源 Python 静态检查）
+line-length = 120
+target-version = "py312"
+exclude = [".venv", "__pycache__", "inspection.db"]
+
+[lint]
+# 默认 E/F + 常用：导入排序(I)、pyupgrade(UP)、bugbear(B)
+select = ["E", "F", "I", "UP", "B"]
+# E501 行宽交给 line-length；B007 元组解包中部分字段未用属惯用写法（DEPARTMENTS 两遍遍历）
+ignore = ["E501", "B007"]

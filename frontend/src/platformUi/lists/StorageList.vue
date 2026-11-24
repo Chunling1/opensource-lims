@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import FeedbackNotice from '../../components/common/FeedbackNotice.vue'
+import type { TableColumn } from '../../types/common/table'
+import SampleDisposalActionModal from "./DisposalActionModal.vue"
+import SampleOutboundActionModal from '../../components/samples/SampleOutboundActionModal.vue'
+import PageHeading from '../../components/common/PageHeading.vue'
+import QueryFormLayout from '../../components/common/QueryFormLayout.vue'
+import ErrorNotice from '../../components/common/ErrorNotice.vue'
+import BootstrapModal from '../../components/common/BootstrapModal.vue'
+import TemplateDateRange from '../../components/common/TemplateDateRange.vue'
+import TemplateDate from '../../components/common/TemplateDate.vue'
+import DataTable from "../TemplateDataTable"
+import TableToolbar from '../../components/common/table/TableToolbar.vue'
+import TestPlanFilterDrawer from '../../components/samples/TestPlanFilterDrawer.vue'
+import {toRefs} from 'vue'
+const props=defineProps<{context:Record<string,any> & {rows:{items:Record<string,any>[];total:number;page:number;pageSize:number};columns:import('../../types/common/table').TableColumn<string>[]}}>()
+const {mode,outboundStates,disposalColumns,disposalStates,disposalRequirements,disposalSearchFields,registrationDemo,registrationCanWrite,parseTableColumns,clientToday,clientYearRange,normalizeError,downloadBlob,currentActor,emptyPlanSelection,inboundColumns,inboundStates,inboundLocations,inboundConditions,outbound,disposal,title,allColumns,states,root,route,router,dates,text,ids,query,draft,disposalDateRange,plans,planState,drawer,planFilter,planBusy,planError,emptyPage,rows,selected,loading,error,actionError,exporting,operation,operationBusy,operationError,disposalOperation,canDispose,openDisposal,submitDisposal,outboundOperation,operationLabel,receipt,receiptErrors,receiptValidation,receiptKeys,receiptFeedback,operationSequence,canOutbound,openOutbound,submitOutbound,canOperate,openOperation,submitOperation,refreshOperation,columnKeys,columns,sequence,exportSequence,controller,load,patch,search,applyPlans,sort,toggleColumn,view,exportRows}=toRefs(props.context)
+</script>
+<template>
+  <PageHeading :title="title" />
+  <section class="card" :aria-label="`${title}列表区域`">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-3"><div class="d-flex align-items-center gap-2"><h5 class="card-title mb-0">{{ title }}</h5><span v-if="!loading && !error" class="badge bg-primary-subtle text-body">{{ rows.total }}</span></div><TableToolbar :label="title" :columns="allColumns" :selected="columnKeys" :count="selected.length" :export-disabled="loading || !!error || exporting" @column="toggleColumn" @reset="patch({ columns: undefined })" @export="exportRows"><button id="inbound-plans" type="button" class="btn btn-light text-body text-nowrap" :disabled="loading" :aria-expanded="drawer" :aria-busy="planBusy" aria-haspopup="dialog" aria-label="检测方案" @click="drawer = true"><i class="ti ti-filter me-1" aria-hidden="true"></i>{{ planState?.count ? `已选 ${planState.count} 项` : '检测方案' }}<span v-if="planBusy" class="spinner-border spinner-border-sm ms-1" aria-label="正在更新方案选择"></span></button></TableToolbar></div>
+    <form class="card-body border-bottom" :aria-label="`${title}查询`" @submit.prevent="search">
+      <QueryFormLayout>
+      <div v-if="disposal" class="query-fields">
+          <div class="query-field query-field--group"><label for="storagelist-group" class="form-label">数据分组</label><select id="storagelist-group" v-model="draft.reportGroup" class="form-select"><option v-for="group in context.reportGroupOptions" :key="group.value" :value="group.value">{{ group.label }}</option></select></div>
+        <div class="query-field query-field--search"><label for="disposal-field" class="form-label">查询内容</label><select id="disposal-field" v-model="draft.searchField" class="form-select"><option v-for="field in disposalSearchFields" :key="field.value" :value="field.value">{{ field.label }}</option></select></div>
+          <div class="query-field query-field--keyword"><label for="disposal-keyword" class="form-label">包含</label><input id="disposal-keyword" v-model="draft.keyword" class="form-control" maxlength="200" placeholder="请输入查询内容" /></div>
+        <div class="query-field query-field--status"><label for="disposal-requirement-filter" class="form-label">处置要求</label><select id="disposal-requirement-filter" v-model="draft.requirement" class="form-select"><option value="">全部</option><option v-for="requirement in disposalRequirements" :key="requirement">{{ requirement }}</option></select></div>
+        <div class="query-field query-field--status"><label for="disposal-status-filter" class="form-label">处置状态</label><select id="disposal-status-filter" v-model="draft.status" class="form-select"><option value="">全部</option><option v-for="status in disposalStates" :key="status">{{ status }}</option></select></div>
+        <div class="query-field query-field--date"><label for="disposal-dates" class="form-label">处置时间</label><TemplateDateRange id="disposal-dates" ref="disposalDateRange" :from="draft.from" :to="draft.to" @change="Object.assign(draft, $event)" /></div>
+      </div>
+      <div v-else class="query-fields">
+          <div class="query-field query-field--group"><label for="storagelist-group" class="form-label">数据分组</label><select id="storagelist-group" v-model="draft.reportGroup" class="form-select"><option v-for="group in context.reportGroupOptions" :key="group.value" :value="group.value">{{ group.label }}</option></select></div>
+        <div class="query-field query-field--keyword"><label for="inbound-code" class="form-label">样品编号</label><input id="inbound-code" v-model="draft.code" class="form-control" maxlength="200" /></div>
+        <div class="query-field query-field--status"><label for="inbound-status" class="form-label">数据状态</label><select id="inbound-status" v-model="draft.status" class="form-select"><option value="">全部</option><option v-for="status in states" :key="status">{{ status }}</option></select></div>
+        <div class="query-field query-field--date"><label for="inbound-dates" class="form-label">委托日期</label><TemplateDateRange id="inbound-dates" :from="draft.from" :to="draft.to" @change="Object.assign(draft, $event)" /></div>
+      </div>
+      <template #actions><button type="submit" class="btn btn-primary text-nowrap" :disabled="loading || planBusy"><i class="ti ti-search me-1" aria-hidden="true"></i>查询</button></template>
+      </QueryFormLayout>
+      <div v-if="planState?.count" class="d-flex flex-wrap align-items-center gap-2 mt-3" aria-label="已选检测方案"><span class="text-muted">检测方案：</span><button v-for="plan in planState.previews.slice(0, 2)" :key="plan.id" type="button" class="btn btn-primary-lt btn-sm text-break" @click="drawer = true">{{ plan.name }}</button><button v-if="planState.count > 2" type="button" class="btn btn-link btn-sm p-0" @click="drawer = true">另 {{ planState.count - 2 }} 项</button></div>
+      <div v-if="planError && !drawer" class="mt-3"><ErrorNotice :error="planError" retry :busy="planBusy" @retry="planFilter?.retry()" /></div>
+    </form>
+    <div v-if="actionError" class="px-3 pt-3"><ErrorNotice :error="actionError" /></div>
+    <DataTable :label="title" :rows="rows.items" :columns="columns" :row-key="row => row.id" :row-label="row => row.code" v-model:selected="selected" :sort-key="query.sort" :direction="query.direction" :pagination="{ ...rows, sizes: [10, 20, 50] }" :loading="loading" :error="error" preserve-rows-on-loading @sort="sort" @page="patch({ page: String($event) })" @size="patch({ size: String($event), page: '1' })" @retry="load">
+      <template #cell-code="{ row }"><button type="button" class="btn btn-link p-0 text-nowrap" :disabled="loading" @click="view(row)">{{ row.code }}</button></template>
+      <template #cell-retentionTime="{ row }">{{ row.retentionTime ? new Date(row.retentionTime).toLocaleString('zh-CN', { hour12: false }) : '—' }}</template>
+      <template #cell-dataStatus="{ row }"><span class="badge" :class="['样品入库完成', '样品已领取'].includes(row.dataStatus) ? 'bg-success-subtle text-success' : 'bg-info-subtle text-info'">{{ row.dataStatus }}</span></template>
+      <template #actions="{ row }"><template v-if="disposal"><button type="button" role="menuitem" class="dropdown-item" :disabled="!canDispose(row, 'dispose')" @click="openDisposal(row, 'dispose')"><i class="ti ti-trash me-2 text-muted" aria-hidden="true"></i>样品处置</button><button type="button" role="menuitem" class="dropdown-item" :disabled="!canDispose(row, 'undo')" @click="openDisposal(row, 'undo')"><i class="ti ti-arrow-back-up me-2 text-muted" aria-hidden="true"></i>撤销处置</button></template><template v-else-if="outbound"><button type="button" role="menuitem" class="dropdown-item" :disabled="!canOutbound(row, 'dispatch')" @click="openOutbound(row, 'dispatch')"><i class="ti ti-package-export me-2 text-muted" aria-hidden="true"></i>出库</button><button type="button" role="menuitem" class="dropdown-item" :disabled="!canOutbound(row, 'undo')" @click="openOutbound(row, 'undo')"><i class="ti ti-arrow-back-up me-2 text-muted" aria-hidden="true"></i>撤销出库</button><button type="button" role="menuitem" class="dropdown-item" :disabled="!canOutbound(row, 'return')" @click="openOutbound(row, 'return')"><i class="ti ti-arrow-back me-2 text-muted" aria-hidden="true"></i>退回委托</button></template><template v-else><button type="button" role="menuitem" class="dropdown-item" :disabled="!canOperate(row, 'receive')" @click="openOperation(row, 'receive')"><i class="ti ti-inbox me-2 text-muted" aria-hidden="true"></i>入库</button><button type="button" role="menuitem" class="dropdown-item" :disabled="!canOperate(row, 'undo')" @click="openOperation(row, 'undo')"><i class="ti ti-arrow-back-up me-2 text-muted" aria-hidden="true"></i>撤销入库</button></template></template>
+    </DataTable>
+  </section>
+  <TestPlanFilterDrawer ref="planFilter" :sample-scope="mode" :open="drawer" :value="plans" @close="drawer = false" @change="applyPlans" @busy="planBusy = $event" @error="planError = $event" />
+  <SampleDisposalActionModal v-if="disposal" :operation="disposalOperation" :busy="operationBusy" :error="operationError" @submit="submitDisposal" @refresh="refreshOperation" @close="!operationBusy && (disposalOperation = undefined)" />
+  <SampleOutboundActionModal v-if="outbound" :operation="outboundOperation" :busy="operationBusy" :error="operationError" @close="!operationBusy && (outboundOperation = undefined)" @submit="submitOutbound" @refresh="refreshOperation" />
+  <BootstrapModal v-if="mode === 'inbound'" :open="!!operation" :title="operation?.action === 'receive' ? '样品入库' : operationLabel" :busy="operationBusy" scrollable @close="!operationBusy && (operation = undefined)">
+    <ErrorNotice :error="operationError" />
+    <FeedbackNotice v-if="receiptValidation" :message="receiptValidation" />
+    <button v-if="operationError && ['BUSINESS_RULE'].includes(operationError.code)" type="button" class="btn btn-outline-primary btn-sm" :disabled="operationBusy" @click="refreshOperation">刷新列表</button>
+    <form v-if="operation" id="sample-inbound-operation" @submit.prevent="submitOperation">
+      <p class="text-break text-muted"><strong>{{ operation.row.code }}</strong> · {{ operation.row.name }}</p>
+      <fieldset v-if="operation.action === 'receive'" :disabled="operationBusy" class="row g-3">
+        <div class="col-12 col-sm-6"><label for="receipt-account" class="form-label">样品管理员工号 <span class="text-danger">*</span></label><input id="receipt-account" v-bind="receiptFeedback('account')" v-model="receipt.account" class="form-control" required maxlength="100" autocomplete="off" /><div v-if="receiptErrors.account" id="receipt-account-error" class="invalid-feedback" role="alert">{{ receiptErrors.account }}</div></div>
+        <div class="col-12 col-sm-6"><label for="receipt-name" class="form-label">样品管理员姓名 <span class="text-danger">*</span></label><input id="receipt-name" v-bind="receiptFeedback('name')" v-model="receipt.name" class="form-control" required maxlength="100" autocomplete="off" /><div v-if="receiptErrors.name" id="receipt-name-error" class="invalid-feedback" role="alert">{{ receiptErrors.name }}</div></div>
+        <div class="col-12"><label for="receipt-date" class="form-label">入库日期 <span class="text-danger">*</span></label><TemplateDate id="receipt-date" v-bind="receiptFeedback('date')" v-model="receipt.date" required :disabled="operationBusy" /><div v-if="receiptErrors.date" id="receipt-date-error" class="invalid-feedback" role="alert">{{ receiptErrors.date }}</div></div>
+        <div class="col-12 col-sm-6"><label for="receipt-location" class="form-label">样品存放地点 <span class="text-danger">*</span></label><select id="receipt-location" v-bind="receiptFeedback('location')" v-model="receipt.location" class="form-select" required><option v-for="location in inboundLocations" :key="location">{{ location }}</option></select><div v-if="receiptErrors.location" id="receipt-location-error" class="invalid-feedback" role="alert">{{ receiptErrors.location }}</div></div>
+        <div class="col-12 col-sm-6"><label for="receipt-condition" class="form-label">样品状态 <span class="text-danger">*</span></label><select id="receipt-condition" v-bind="receiptFeedback('condition')" v-model="receipt.condition" class="form-select" required><option v-for="condition in inboundConditions" :key="condition">{{ condition }}</option></select><div v-if="receiptErrors.condition" id="receipt-condition-error" class="invalid-feedback" role="alert">{{ receiptErrors.condition }}</div></div>
+        <div class="col-12"><label for="receipt-notes" class="form-label">备注</label><textarea id="receipt-notes" v-bind="receiptFeedback('notes')" v-model="receipt.notes" class="form-control" rows="3" maxlength="2000"></textarea><div v-if="receiptErrors.notes" id="receipt-notes-error" class="invalid-feedback" role="alert">{{ receiptErrors.notes }}</div></div>
+      </fieldset>
+      <p v-else>确认对这条样品执行“{{ operationLabel }}”？</p>
+    </form>
+    <template #footer><button type="button" class="btn btn-light" :disabled="operationBusy" @click="operation = undefined">取消</button><button type="submit" form="sample-inbound-operation" class="btn btn-primary" :disabled="operationBusy || !operation || !!operationError && ['BUSINESS_RULE'].includes(operationError.code)"><span v-if="operationBusy" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>{{ operationBusy ? '正在提交…' : '确认' }}</button></template>
+  </BootstrapModal>
+</template>

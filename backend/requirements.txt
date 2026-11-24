@@ -1,0 +1,26 @@
+Flask>=3.1
+Flask-Cors>=6.0
+Flask-SQLAlchemy>=3.1
+SQLAlchemy>=2.0,<2.1
+PyMySQL>=1.1,<2
+Flask-Migrate>=4.0,<5
+alembic>=1.13,<2
+PyJWT>=2.10
+python-docx>=1.1
+gunicorn>=23.0
+bcrypt>=4.0
+PyMuPDF>=1.24
+pdfplumber>=0.11
+pypdf>=5.0
+reportlab>=4.2,<5
+docxcompose>=1.4
+openpyxl>=3.1
+pywin32>=305; sys_platform == 'win32'
+onnxruntime>=1.20,<2
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<5
+docxtpl>=0.20.0
+Jinja2>=3.1.6
+MarkupSafe>=3.0.0
+qrcode>=8.0
+cn2an>=0.5.24

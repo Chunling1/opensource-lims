@@ -1,0 +1,29 @@
+{
+  "sha256": {
+    "components/api/index.js": "2ace125b7150f9a06d6e1f262a34f10e8948f932ab6e05703be6678d8fe9504a",
+    "components/utils/ase.js": "cde167d84558c47867a207ada4cbf347762aa97cd7758518e40cb0083eb30e67",
+    "components/utils/axios.js": "588bb47851954dd82a60e08bba6e3f6e982d8b607e2c00bc2d9e6409221ebcdb",
+    "components/utils/util.js": "f1fb39ffea6cd630cfeda36b84f614ea4f403cfbebbd7dbf74d963b1bb684931",
+    "components/Verify/VerifyPoints.vue": "2ee4c182fe12c382f652cc4b0a0705e881af3bff481b7250750e9d3234ffe4ec",
+    "components/Verify/VerifySlide.vue": "1ea99da35925c98624563e03e980c319b17bc4846b09849608a659d3be80d53e",
+    "components/Verify.vue": "a3d6265787670031b71920c2df7d546e3939ec150264717c7820d42c33410475",
+    "components/Verify.vue.d.ts": "22a97ad0a77a15f8c34872892629825ee1394d686a452b4cbc4d5352677ca29f",
+    "images/modules/1.png": "50262c20014cfd77ada485fc1af102c07e51f94889d12a6a75f6fd1ea811eca6",
+    "images/modules/2.png": "74fb11a51c8038e75f82bfae7d4d4ce12dfc13f236d79918e8466b7bcd7933d0",
+    "images/modules/3.png": "23514f3a8e22b16afc34fba3f8dbdd746d3ab006d702fbe242cad59add251f5a",
+    "images/modules/4.png": "b83fcbc85058b3473e7c7ff75fcf26ce7dcbca191608ad0d533a6d2662f54c43",
+    "images/modules/5.png": "9e0e26ac8f84498d86ae53cb665e50dbb779e6df323b39599363647db8c87d12",
+    "images/modules/6.png": "bc7d2549d5d6afa6c8a584dd81504e5bceb9c32a27ab664622e39311db709e02",
+    "images/modules/bg8.png": "ac952bfcf7d871e1b0e4417910ae4e781d86c404d956e34984e22ab9bb6dc984",
+    "images/slidingBlock/1.png": "a945687f04b1f3a8842d11913c691f94e2f2cc3540490ae8a6f518aff53ce228",
+    "images/slidingBlock/2.png": "2230e148fc47306f9224cc295693ebea1f4f71d29ea5241f354b5b93bd79a10c",
+    "images/slidingBlock/3.png": "d1d117daacb37b306122e16250a7f40cc90828e392e05de1b130ebfa7bc8a549",
+    "images/slidingBlock/4.png": "3d045a4b9db26f8930f2f2fe2ccee904c6d1fbaae64dd9c19edd6a6ecce86de2",
+    "images/slidingBlock/5.png": "dce514e1c787832f537576897843fe37729393d01125877ede5e7bf954ea3d64",
+    "images/slidingBlock/6.png": "edb14a4584be5da6de1e96974011477a1cb970b045892618b05f92b7a8b3b496",
+    "integration.patch": "01e063acf720d23e9b7737dcf3bf6ed75b04a85f62c25978bd7bb7d9dc052482",
+    "LICENSE": "20bcae93bc72bd5e6eb33e3a34b93094be49b1d48a1a71ae51a878157fbebacc",
+    "README.md": "4da3023aed881702707e6ca86ea5d2a1f4ae102fb45eee8f2098c560e99374e9",
+    "upstream-manifest.json": "d542e238049d48aff1b0cf4c9989ee59597541c317e25f50945d5cf1444353cf"
+  }
+}

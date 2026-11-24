@@ -1,0 +1,108 @@
+import { toolbarButton, openToolbarExport } from './helpers/toolbar'
+import { expect, test } from '@playwright/test'
+
+test('preview can be closed during loading and a failed request can be retried', async ({ page }) => {
+  await page.goto('/#/reports/print')
+  const menu = async () => {
+    await page.getByRole('button', { name: 'SP2026090091 更多操作', exact: true }).click()
+    await page.getByRole('menuitem', { name: '预览', exact: true }).click()
+  }
+  let release!: () => void, requests = 0
+  const pending = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/reports/lifecycle/*/file', async route => {
+    requests++
+    if (requests === 1) { await pending; await route.abort().catch(() => {}); return }
+    if (requests === 2) { await route.fulfill({ status: 503, json: { error: { code: 'UNAVAILABLE', message: '预览暂时不可用' } } }); return }
+    await route.continue()
+  })
+  await menu()
+  const preview = page.getByRole('dialog', { name: '报告预览', exact: true })
+  await expect(preview.getByRole('status')).toHaveText('正在加载报告…')
+  await expect(preview.locator('.spinner-border')).toBeVisible()
+  await preview.getByRole('button', { name: '关闭', exact: true }).click()
+  await expect(preview).toBeHidden()
+  await menu()
+  await expect(preview).toContainText('预览暂时不可用')
+  release()
+  await preview.getByRole('button', { name: '重试', exact: true }).click()
+  await expect(preview.locator('iframe')).toHaveAttribute('src', /^blob:/)
+  await expect(preview).not.toContainText('预览暂时不可用')
+  await preview.getByRole('button', { name: '关闭', exact: true }).click()
+  await expect(page.locator('.modal-backdrop')).toHaveCount(0)
+  await expect(page.getByRole('row').filter({ hasText: 'SP2026090091' })).toContainText('报告打印中')
+})
+
+test('a successful query clears an action error and saving shows feedback until the table refreshes', async ({ page }) => {
+  await page.goto('/#/reports/print')
+  let requests = 0, release!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/reports/lifecycle/*/action', async route => {
+    if (++requests === 1) { await route.fulfill({ status: 409, json: { error: { code: 'VERSION_CONFLICT', message: '报告记录已更新，请刷新' } } }); return }
+    await pending; await route.continue()
+  })
+  const open = async () => {
+    await page.getByRole('button', { name: 'SP2026090091 更多操作', exact: true }).click()
+    await page.getByRole('menuitem', { name: '打印完成', exact: true }).click()
+  }
+  await open()
+  const dialog = page.getByRole('dialog', { name: '打印完成', exact: true })
+  await expect(dialog.locator('.modal-dialog')).not.toHaveClass(/modal-lg/)
+  await dialog.getByRole('checkbox').check()
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  const issue = page.getByRole('alert').filter({ hasText: '报告记录已更新，请刷新' })
+  await expect(issue).toBeVisible()
+  await page.getByRole('form', { name: '报告打印条件' }).getByRole('button', { name: '查询', exact: true }).click()
+  await expect(issue).toHaveCount(0)
+  await open()
+  await dialog.getByRole('checkbox').check()
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '正在保存…', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: '取消', exact: true })).toBeDisabled()
+  release()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByRole('row').filter({ hasText: 'SP2026090091' })).toHaveCount(0)
+  await expect(issue).toHaveCount(0)
+})
+
+for (const width of [1440, 390]) test(`report print review-style filters, columns and export at ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 1000 })
+  await page.goto('/#/reports/print')
+  const form = page.getByRole('form', { name: '报告打印条件', exact: true })
+  const table = page.getByRole('table', { name: '报告打印列表', exact: true })
+  await expect(table.getByRole('row').filter({ hasText: 'SP2026090091' })).toBeVisible()
+  await expect(table.getByRole('row').filter({ hasText: 'SP2026090093' })).toHaveCount(0)
+  await expect(form.getByLabel('查询内容').locator('option')).toHaveText(['样品编号', '报告编号', '委托编号', '委托单位', '委托人', '项目名称', '报告标题'])
+  await expect(form.getByLabel('查询内容')).toHaveValue('reportCode')
+  await expect(form.getByLabel('数据状态', { exact: true })).toHaveValue('报告打印中')
+  await form.getByRole('button', { name: /更多筛选/ }).click()
+  await expect(form.getByLabel('日期字段').locator('option')).toHaveText(['批准日期', '试验开始日期', '试验结束日期', '委托日期'])
+  await expect(form.getByLabel('日期字段')).toHaveValue('approvalDate')
+  await expect(form.getByLabel('状态', { exact: true })).toHaveValue('未打印')
+  await page.getByRole('button', { name: '检测方案', exact: true }).click()
+  const plans = page.getByRole('dialog', { name: '筛选检测方案', exact: true })
+  await expect(plans.getByRole('checkbox', { name: '选择分组 综合检测部', exact: true })).toBeVisible()
+  await plans.getByRole('button', { name: '关闭', exact: true }).click()
+  await (await toolbarButton(page, '报告打印', '显示')).click()
+  const columns = page.getByRole('dialog', { name: '报告打印显示列', exact: true })
+  await expect(columns.getByRole('checkbox')).toHaveCount(27)
+  for (const name of ['报告交付份数', '更改次数', '报告归档状态', '报告形式', '批准日期', '收费状态', '样品/工程名称', '检测方案', '项目名称', '标准价格费用', '折扣价格费用', '实际价格费用']) await expect(columns.getByLabel(name, { exact: true })).toBeVisible()
+  await columns.getByLabel('报告交付份数', { exact: true }).check()
+  await columns.getByRole('button', { name: '完成', exact: true }).click()
+  await expect(table.getByRole('columnheader', { name: '报告交付份数', exact: true })).toBeVisible()
+  await form.getByLabel('数据状态', { exact: true }).selectOption('报告打印完成')
+  await form.getByLabel('状态', { exact: true }).selectOption('已打印')
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await expect(table.getByRole('row').filter({ hasText: 'SP2026090092' })).toBeVisible()
+  await expect(table.getByRole('row').filter({ hasText: 'SP2026090091' })).toHaveCount(0)
+  await openToolbarExport(page, '报告打印')
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出查询结果', exact: true }).click()
+  expect((await download).suggestedFilename()).toBe('报告打印.csv')
+  const response = await page.request.post('/api/registration/reports/lifecycle/print-export', { headers: { 'X-Demo-Actor': 'admin' }, data: { status: '报告打印完成', printStatus: '已打印' } })
+  const csv = await response.text()
+  expect(csv).toContain('SP2026090092'); expect(csv).not.toContain('SP2026090091'); expect(csv).not.toContain('SP2026090093')
+  expect(csv).toContain('"打印人","打印日期","附件","批准日期"')
+  await page.screenshot({ path: info.outputPath(`report-print-${width}.png`), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+})

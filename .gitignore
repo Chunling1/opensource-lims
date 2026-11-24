@@ -1,23 +1,30 @@
-instance/
-.venv/
-node_modules/
+# Python / Backend
 __pycache__/
-*.pyc
-.env
-.env.*
-!.env.example
-wheels/
-frontend/dist/
+*.py[cod]
+*$py.class
+.venv/
+venv/
 *.db
 *.sqlite
 *.sqlite3
-*.log
-*.pem
-*.key
-coverage/
+backend/instance/
+!backend/instance/.gitkeep
 .pytest_cache/
-acceptance/ui/*.md
-!acceptance/ui/README.md
-acceptance/README.md
-acceptance/ui/node_modules/
-acceptance/ui/artifacts/
+.coverage
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,48 @@
+import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import { toolbarButton, openToolbarExport } from './helpers/toolbar'
+
+test('narrow registration toolbars stay on one line and retain column and export controls', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 })
+  await page.goto('/#/commissions/registration?current=demo-wt-1&scope=all&sSize=50')
+  const samples = page.getByRole('table', { name: '样品列表', exact: true })
+  await expect(samples.locator('tbody tr')).toHaveCount(50)
+  const selectedCount = await samples.locator('tbody input[type=checkbox]:enabled').count()
+  await samples.getByRole('checkbox', { name: '全选当前页样品' }).check()
+  await expect(await toolbarButton(page, '样品', `批量修改（${selectedCount}）`)).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('link', { name: /打印标签/ })).toHaveCount(0)
+  for (const label of ['委托', '样品']) {
+    const toolbar = page.getByRole('group', { name: `${label}工具栏`, exact: true })
+    await toolbar.scrollIntoViewIfNeeded()
+    const boxes = await toolbar.locator('a:visible, button:visible').evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { top: r.top, right: r.right, left: r.left } }))
+    expect(Math.max(...boxes.map(b => b.top)) - Math.min(...boxes.map(b => b.top))).toBeLessThan(2)
+    expect(Math.min(...boxes.map(b => b.left))).toBeGreaterThanOrEqual(0)
+    expect(Math.max(...boxes.map(b => b.right))).toBeLessThanOrEqual(320)
+    await (await toolbarButton(page, label, '显示')).click()
+    const dialog = page.getByRole('dialog', { name: `${label}显示列`, exact: true })
+    await expect(dialog).toBeVisible()
+    const field = label === '样品' ? '报告编号' : '委托单位'
+    const checkbox = dialog.getByRole('checkbox', { name: field, exact: true })
+    await checkbox.uncheck()
+    await expect(page.getByRole('table', { name: `${label}列表`, exact: true }).getByRole('columnheader', { name: field, exact: true })).toHaveCount(0)
+    await dialog.getByRole('button', { name: '恢复默认', exact: true }).click()
+    await expect(checkbox).toBeChecked()
+    await dialog.getByRole('button', { name: '完成', exact: true }).click()
+    await expect(dialog).toBeHidden()
+    await expect(page.locator('.modal-backdrop')).toHaveCount(0)
+    await toolbar.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: testInfo.outputPath(`${label}-toolbar-320.png`) })
+  }
+  const toolbar = page.getByRole('group', { name: '样品工具栏', exact: true })
+  await openToolbarExport(page, '样品')
+  const downloading = page.waitForEvent('download')
+  await toolbar.getByRole('button', { name: `导出已选记录（${selectedCount}）`, exact: true }).click()
+  const csv = await readFile((await (await downloading).path())!, 'utf8')
+  expect(csv.split('\r\n')).toHaveLength(selectedCount + 1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  const removed = await page.request.post('/api/registration/samples/labels', { headers: { 'X-Demo-Actor': 'admin' }, data: { ids: ['demo-yp-1'] } })
+  expect(removed.status()).toBe(404)
+  await page.goto('/#/commissions/registration/labels')
+  await expect(page.getByRole('heading', { name: '样品标签打印', exact: true })).toHaveCount(0)
+})

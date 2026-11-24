@@ -1,0 +1,886 @@
+--- a/components/Verify.vue
++++ b/components/Verify.vue
+@@ -1,5 +1,5 @@
+ <template>
+-<div :class="mode=='pop'?'mask':''"  v-show="showBox">
++<div class="aj-captcha-native" :class="mode=='pop'?'mask':''"  v-show="showBox">
+     <div :class="mode=='pop'?'verifybox':''" :style="{'max-width':parseInt(imgSize.width)+30+'px'}">
+         <div class="verifybox-top"  v-if="mode=='pop'">
+             请完成安全验证
+@@ -31,8 +31,8 @@
+      * Verify 验证码组件
+      * @description 分发验证码使用
+      * */
+-    import VerifySlide from './Verify/VerifySlide'
+-    import VerifyPoints from './Verify/VerifyPoints'
++    import VerifySlide from './Verify/VerifySlide.vue'
++    import VerifyPoints from './Verify/VerifyPoints.vue'
+ import { computed, ref,watch,toRefs,watchEffect } from 'vue';
+ 
+     export default {
+@@ -98,14 +98,14 @@
+              * @description 刷新
+              * */
+             const refresh = ()=>{
+-                console.log(instance.value);
++
+                 if (instance.value.refresh) {
+                     instance.value.refresh()
+                 }
+             }
+             const closeBox = ()=>{
+                 clickShow.value = false
+-                refresh();
++                if (mode.value === "pop") refresh();
+             }
+             const show = ()=>{
+                 if (mode.value=="pop") {
+@@ -138,7 +138,7 @@
+     }
+ </script>
+ <style>
+-    .verifybox{
++    .aj-captcha-native .verifybox{
+         position: relative;
+         box-sizing: border-box;
+         border-radius: 2px;
+@@ -149,7 +149,7 @@
+         top:50%;
+         transform: translate(-50%,-50%);
+     }
+-    .verifybox-top{
++    .aj-captcha-native .verifybox-top{
+         padding: 0 15px;
+         height: 50px;
+         line-height: 50px;
+@@ -159,11 +159,11 @@
+         border-bottom: 1px solid #e4e7eb;
+         box-sizing: border-box;
+     }
+-    .verifybox-bottom{
++    .aj-captcha-native .verifybox-bottom{
+         padding: 15px;
+         box-sizing: border-box;
+     }
+-    .verifybox-close{
++    .aj-captcha-native .verifybox-close{
+         position: absolute;
+         top: 13px;
+         right: 9px;
+@@ -172,7 +172,7 @@
+         text-align: center;
+         cursor: pointer;
+     }
+-    .mask{
++    .aj-captcha-native.mask{
+         position: fixed;
+         top: 0;
+         left:0;
+@@ -183,7 +183,18 @@
+         /* display: none; */
+         transition: all .5s;
+     }
+-    .verify-tips{
++    /* Fade only the result background; text and controls remain fully opaque. */
++    .aj-captcha-native .verify-tips.verify-result-success,
++    .aj-captcha-native .verify-bar-area.verify-result-success {
++        background-color: var(--vz-success-bg-subtle);
++        background-color: color-mix(in srgb, color-mix(in srgb, var(--vz-success) 15%, var(--vz-body-bg)) 85%, transparent);
++    }
++    .aj-captcha-native .verify-tips.verify-result-error,
++    .aj-captcha-native .verify-bar-area.verify-result-error {
++        background-color: var(--vz-danger-bg-subtle);
++        background-color: color-mix(in srgb, color-mix(in srgb, var(--vz-danger) 15%, var(--vz-body-bg)) 85%, transparent);
++    }
++    .aj-captcha-native .verify-tips{
+         position: absolute;
+         left: 0px;
+         bottom:0px;
+@@ -192,23 +203,23 @@
+         line-height:30px;
+         color: #fff;
+     }
+-    .suc-bg{
++    .aj-captcha-native .suc-bg{
+        background-color:rgba(92, 184, 92,.5);  
+        filter: progid:DXImageTransform.Microsoft.gradient(startcolorstr=#7f5CB85C, endcolorstr=#7f5CB85C);
+     }
+-    .err-bg{
++    .aj-captcha-native .err-bg{
+        background-color:rgba(217, 83, 79,.5);  
+        filter: progid:DXImageTransform.Microsoft.gradient(startcolorstr=#7fD9534F, endcolorstr=#7fD9534F);
+     }
+-    .tips-enter,.tips-leave-to{
++    .aj-captcha-native .tips-enter,.aj-captcha-native .tips-leave-to{
+         bottom: -30px;
+     }
+-    .tips-enter-active,.tips-leave-active{
++    .aj-captcha-native .tips-enter-active,.aj-captcha-native .tips-leave-active{
+         transition: bottom .5s;
+     }
+     /* ---------------------------- */
+     /*常规验证码*/
+-    .verify-code {
++    .aj-captcha-native .verify-code {
+         font-size: 20px;
+         text-align: center;
+         cursor: pointer;
+@@ -216,39 +227,39 @@
+         border: 1px solid #ddd;
+     }
+ 
+-    .cerify-code-panel {
++    .aj-captcha-native .cerify-code-panel {
+         height: 100%;
+         overflow: hidden;
+     }
+ 
+-    .verify-code-area {
++    .aj-captcha-native .verify-code-area {
+         float: left;
+     }
+ 
+-    .verify-input-area {
++    .aj-captcha-native .verify-input-area {
+         float: left;
+         width: 60%;
+         padding-right: 10px;
+ 
+     }
+ 
+-    .verify-change-area {
++    .aj-captcha-native .verify-change-area {
+         line-height: 30px;
+         float: left;
+     }
+ 
+-    .varify-input-code {
++    .aj-captcha-native .varify-input-code {
+         display: inline-block;
+         width: 100%;
+         height: 25px;
+     }
+ 
+-    .verify-change-code {
++    .aj-captcha-native .verify-change-code {
+         color: #337AB7;
+         cursor: pointer;
+     }
+ 
+-    .verify-btn {
++    .aj-captcha-native .verify-btn {
+         width: 200px;
+         height: 30px;
+         background-color: #337AB7;
+@@ -259,7 +270,7 @@
+     
+     
+     /*滑动验证码*/
+-    .verify-bar-area {
++    .aj-captcha-native .verify-bar-area {
+         position: relative;
+         background: #FFFFFF;
+         text-align: center;
+@@ -270,25 +281,19 @@
+         -webkit-border-radius: 4px;
+     }
+ 
+-    .verify-bar-area .verify-move-block {
++    .aj-captcha-native .verify-bar-area .verify-move-block {
+         position: absolute;
+         top: 0px;
+         left: 0;
+-        background: #fff;
+         cursor: pointer;
+         -webkit-box-sizing: content-box;
+         -moz-box-sizing: content-box;
+         box-sizing: content-box;
+-        box-shadow: 0 0 2px #888888;
+-        -webkit-border-radius: 1px;
+-    }
+-
+-    .verify-bar-area .verify-move-block:hover {
+-        background-color: #337ab7;
+-        color: #FFFFFF;
+-    }
+-
+-    .verify-bar-area .verify-left-bar {
++    }
++
++
++
++    .aj-captcha-native .verify-bar-area .verify-left-bar {
+         position: absolute;
+         top: -1px;
+         left: -1px;
+@@ -300,7 +305,7 @@
+         border: 1px solid #ddd;
+     }
+ 
+-    .verify-img-panel {
++    .aj-captcha-native .verify-img-panel {
+         margin: 0;
+         -webkit-box-sizing: content-box;
+         -moz-box-sizing: content-box;
+@@ -311,42 +316,32 @@
+         position: relative;
+     }
+ 
+-    .verify-img-panel .verify-refresh {
+-        width: 25px;
+-        height: 25px;
+-        text-align: center;
+-        padding: 5px;
+-        cursor: pointer;
+-        position: absolute;
+-        top: 0;
+-        right: 0;
+-        z-index: 2;
+-    }
+-
+-    .verify-img-panel .icon-refresh {
++
++
++    .aj-captcha-native .verify-img-panel .icon-refresh {
+         font-size: 20px;
+         color: #fff;
+     }
+ 
+-    .verify-img-panel .verify-gap {
++    .aj-captcha-native .verify-img-panel .verify-gap {
+         background-color: #fff;
+         position: relative;
+         z-index: 2;
+         border: 1px solid #fff;
+     }
+ 
+-    .verify-bar-area .verify-move-block .verify-sub-block {
++    .aj-captcha-native .verify-bar-area .verify-move-block .verify-sub-block {
+         position: absolute;
+         text-align: center;
+         z-index: 3;
+         /* border: 1px solid #fff; */
+     }
+ 
+-    .verify-bar-area .verify-move-block .verify-icon {
++    .aj-captcha-native .verify-bar-area .verify-move-block .verify-icon {
+         font-size: 18px;
+     }
+ 
+-    .verify-bar-area .verify-msg {
++    .aj-captcha-native .verify-bar-area .verify-msg {
+         z-index: 3;
+     }
+ 
+@@ -359,7 +354,7 @@
+     /*url('../fonts/iconfont.svg?t=1508229193188#iconfont') format('svg'); !* iOS 4.1- *!*/
+     /*}*/
+ 
+-    .iconfont {
++    .aj-captcha-native .iconfont {
+         font-family: "iconfont" !important;
+         font-size: 16px;
+         font-style: normal;
+@@ -367,7 +362,7 @@
+         -moz-osx-font-smoothing: grayscale;
+     }
+ 
+-    .icon-check:before {
++    .aj-captcha-native .icon-check:before {
+         content: " ";
+         display: block;
+         width: 16px;
+@@ -383,7 +378,7 @@
+         background-size: contain;
+     }
+ 
+-    .icon-close:before {
++    .aj-captcha-native .icon-close:before {
+         content: " ";
+         display: block;
+         width: 16px;
+@@ -399,7 +394,7 @@
+         background-size: contain;
+     }
+ 
+-    .icon-right:before {
++    .aj-captcha-native .icon-right:before {
+         content: " ";
+         display: block;
+         width: 16px;
+@@ -416,7 +411,7 @@
+         background-size: contain;
+     }
+ 
+-    .icon-refresh:before {
++    .aj-captcha-native .icon-refresh:before {
+         content: " ";
+         display: block;
+         width: 16px;
+--- a/components/api/index.js
++++ b/components/api/index.js
+@@ -1,27 +1,7 @@
+-/**
+- * 此处可直接引用自己项目封装好的 axios 配合后端联调
+- */
+-
+-
+-import request from "./../utils/axios"  //组件内部封装的axios
+-// import request from "@/api/axios.js"       //调用项目封装的axios
+-
+-//获取验证图片  以及token
+-export function reqGet(data) {
+-	return  request({
+-        url: '/captcha/get',
+-        method: 'post',
+-        data
+-    })
++// Host-provided transport; keep each mounted challenge bound to its account and abort signal.
++import { inject } from 'vue'
++export function useCaptchaApi() {
++  const api = inject('aj-captcha-api')
++  if (!api) throw new Error('AJ-Captcha transport is required')
++  return api
+ }
+-
+-//滑动或者点选验证
+-export function reqCheck(data) {
+-	return  request({
+-        url: '/captcha/check',
+-        method: 'post',
+-        data
+-    })
+-}
+-
+-
+--- a/components/Verify/VerifySlide.vue
++++ b/components/Verify/VerifySlide.vue
+@@ -3,38 +3,34 @@
+         <div v-if="type === '2'" class="verify-img-out"
+              :style="{height: (parseInt(setSize.imgHeight) + vSpace) + 'px'}"
+             >
+-            <div class="verify-img-panel" :style="{width: setSize.imgWidth,
++            <div class="verify-img-panel rounded border bg-light overflow-hidden" :style="{width: setSize.imgWidth,
+                                                    height: setSize.imgHeight,}">
+-                <img :src="'data:image/png;base64,'+backImgBase" alt="" style="width:100%;height:100%;display:block">
+-                <div class="verify-refresh" @click="refresh" v-show="showRefresh"><i class="iconfont icon-refresh"></i>
++                <img v-if="backImgBase" :src="'data:image/png;base64,'+backImgBase" alt="" style="width:100%;height:100%;display:block">
++                <div class="verify-sub-block position-absolute top-0 pe-none"
++                     :style="{width: parseFloat(setSize.imgWidth) * 47 / 310 + 'px', height: setSize.imgHeight, left: position * parseFloat(setSize.imgWidth) / 310 + 'px', transition: transitionLeft}">
++                    <img v-if="blockBackImgBase" :src="'data:image/png;base64,'+blockBackImgBase" alt="" style="width:100%;height:100%;display:block;-webkit-user-drag:none;">
+                 </div>
++                <button type="button" class="verify-refresh btn btn-light btn-icon btn-sm position-absolute top-0 end-0 m-2" aria-label="刷新验证码" :disabled="loading || pending" @click="refresh" v-show="showRefresh"><i class="ri-refresh-line fs-16" aria-hidden="true"></i>
++                </button>
+                 <transition name="tips">
+-                    <span class="verify-tips" v-if="tipWords" :class="passFlag ?'suc-bg':'err-bg'">{{tipWords}}</span>
++                    <span role="status" class="verify-tips small text-center fw-medium" v-if="tipWords" :class="passFlag ? 'verify-result-success text-success' : 'verify-result-error text-danger'">{{tipWords}}</span>
+                 </transition>
+             </div>
+         </div>
+         <!-- 公共部分 -->
+-        <div class="verify-bar-area" :style="{width: setSize.imgWidth,
++        <div class="verify-bar-area rounded border bg-light text-muted" :style="{width: setSize.imgWidth,
+                                               height: barSize.height,
+                                               'line-height':barSize.height}">
+             <span class="verify-msg" v-text="text"></span>
+-            <div class="verify-left-bar"
+-                 :style="{width: (leftBarWidth!==undefined)?leftBarWidth: barSize.height, height: barSize.height, 'border-color': leftBarBorderColor, transaction: transitionWidth}">
++            <div class="verify-left-bar rounded border-0 top-0 start-0" :class="passFlag === true ? 'bg-success-subtle' : passFlag === false ? 'bg-danger-subtle' : 'bg-primary-subtle'"
++                 :style="{width: (leftBarWidth!==undefined)?leftBarWidth: barSize.height, height: barSize.height, transition: transitionWidth}">
+                 <span class="verify-msg" v-text="finishText"></span>
+-                <div class="verify-move-block"
++                <div class="verify-move-block btn btn-icon rounded border-0 p-0" :class="passFlag === true ? 'btn-success' : passFlag === false ? 'btn-danger' : 'btn-soft-primary text-primary-emphasis'"
++                     role="slider" tabindex="0" aria-label="安全验证" aria-valuemin="0" aria-valuemax="263" :aria-valuenow="Math.round(position)" :aria-disabled="loading || pending || isEnd || !backToken" @keydown="keyboard"
+                      @touchstart="start"
+                      @mousedown="start"
+-                     :style="{width: barSize.height, height: barSize.height, 'background-color': moveBlockBackgroundColor, left: moveBlockLeft, transition: transitionLeft}">
+-                    <i :class="['verify-icon iconfont', iconClass]"
+-                       :style="{color: iconColor}"></i>
+-                    <div v-if="type === '2'" class="verify-sub-block"
+-                        :style="{'width':Math.floor(parseInt(setSize.imgWidth)*47/310)+ 'px',
+-                                  'height': setSize.imgHeight,
+-                                  'top':'-' + (parseInt(setSize.imgHeight) + vSpace) + 'px',
+-                                  'background-size': setSize.imgWidth + ' ' + setSize.imgHeight,
+-                                  }">
+-                        <img :src="'data:image/png;base64,'+blockBackImgBase" alt=""  style="width:100%;height:100%;display:block;-webkit-user-drag:none;">
+-                    </div>
++                     :style="{width: barSize.height, height: barSize.height, left: moveBlockLeft, transition: transitionLeft}">
++                    <i class="fs-20" :class="passFlag === true ? 'ri-check-line' : passFlag === false ? 'ri-close-line' : 'ri-arrow-right-line'" aria-hidden="true"></i>
+                 </div>
+             </div>
+         </div>
+@@ -47,8 +43,8 @@
+      * */
+     import {aesEncrypt} from "./../utils/ase"
+     import {resetSize} from './../utils/util'
+-    import {reqGet,reqCheck}  from "./../api/index"
+- import { computed, onMounted, reactive, ref,watch,nextTick,toRefs, watchEffect,getCurrentInstance} from 'vue';
++    import {useCaptchaApi} from "./../api/index"
++ import { computed, onMounted, reactive, ref,watch,nextTick,toRefs, watchEffect,getCurrentInstance,onBeforeUnmount} from 'vue';
+     //  "captchaType":"blockPuzzle",
+     export default {
+         name: 'VerifySlide',
+@@ -102,6 +98,7 @@
+             }
+         },
+         setup(props,context){
++            const { reqGet, reqCheck } = useCaptchaApi()
+             const {mode,captchaType,vSpace,imgSize,barSize,type,blockSize,explain} = toRefs(props)
+             const { proxy } = getCurrentInstance();
+             let secretKey = ref(''),           //后端返回的ase加密秘钥
+@@ -123,8 +120,7 @@
+                 }),
+                 top = ref(0),
+                 left = ref(0),
+-                moveBlockLeft = ref(undefined),
+-                leftBarWidth = ref(undefined),
++                position = ref(0),
+                 // 移动中样式
+                 moveBlockBackgroundColor = ref(undefined),
+                 leftBarBorderColor = ref('#ddd'),
+@@ -139,6 +135,30 @@
+ 
+                 const barArea = computed(()=>{
+                     return proxy.$el.querySelector('.verify-bar-area')
++                })
++                // A button and a puzzle have different widths. Map the same bounded
++                // source-image coordinate to each one's available travel separately.
++                const handleTravel = computed(() => Math.max(0, parseFloat(setSize.imgWidth || 0) - parseFloat(barSize.value.height)))
++                const moveBlockLeft = computed(() => position.value / 263 * handleTravel.value + 'px')
++                const leftBarWidth = computed(() => position.value / 263 * handleTravel.value + parseFloat(barSize.value.height) + 'px')
++                let dragPosition = 0, dragging = false
++                function setPosition(value) { position.value = Math.max(0, Math.min(263, Number.isFinite(value) ? value : 0)) }
++                function cancelDrag() { dragging = false; status.value = false }
++                let disposed = false, imageRevision = 0
++                const pending = ref(false), loading = ref(false)
++                const timers = new Set()
++                function later(fn, ms) {
++                    const id = setTimeout(() => { timers.delete(id); if (!disposed) fn() }, ms)
++                    timers.add(id)
++                }
++                onBeforeUnmount(() => {
++                    disposed = true; status.value = false; imageRevision++
++                    timers.forEach(clearTimeout)
++                    window.removeEventListener('touchmove', move)
++                    window.removeEventListener('mousemove', move)
++                    window.removeEventListener('touchend', end)
++                    window.removeEventListener('mouseup', end)
++                    window.removeEventListener('touchcancel', cancelDrag)
+                 })
+                 function init() {
+                     text.value = explain.value
+@@ -152,35 +172,11 @@
+                         proxy.$parent.$emit('ready', proxy)
+                     })
+ 
+-                    window.removeEventListener("touchmove", function (e) {
+-                        move(e);
+-                    });
+-                    window.removeEventListener("mousemove", function (e) {
+-                        move(e);
+-                    });
+-
+-                    //鼠标松开
+-                    window.removeEventListener("touchend", function () {
+-                        end();
+-                    });
+-                    window.removeEventListener("mouseup", function () {
+-                        end();
+-                    });
+-
+-                    window.addEventListener("touchmove", function (e) {
+-                        move(e);
+-                    });
+-                    window.addEventListener("mousemove", function (e) {
+-                        move(e);
+-                    });
+-
+-                    //鼠标松开
+-                    window.addEventListener("touchend", function () {
+-                        end();
+-                    });
+-                    window.addEventListener("mouseup", function () {
+-                        end();
+-                    });
++                    window.addEventListener('touchmove', move, { passive: false });
++                    window.addEventListener('mousemove', move);
++                    window.addEventListener('touchend', end);
++                    window.addEventListener('mouseup', end);
++                    window.addEventListener('touchcancel', cancelDrag);
+                 }
+                 watch(type,()=>{
+                     init()
+@@ -194,14 +190,17 @@
+                 })
+                 //鼠标按下
+                 function start(e) {
++                    if (disposed || loading.value || pending.value || isEnd.value || !backToken.value || (!e.touches && e.button !== 0)) return
+                     e = e || window.event
+                     if (!e.touches) {  //兼容PC端 
+                         var x = e.clientX;
+                     } else {           //兼容移动端
+-                        var x = e.touches[0].pageX;
+-                    }
+-                    console.log(barArea);
+-                    startLeft.value =Math.floor(x - barArea.value.getBoundingClientRect().left);
++                        var x = e.touches[0].clientX;
++                    }
++
++                    startLeft.value = x;
++                    dragPosition = position.value; dragging = true;
++                    transitionLeft.value = ''; transitionWidth.value = '';
+                     startMoveTime.value = +new Date();    //开始滑动的时间
+                     if (isEnd.value == false) {
+                         text.value = ''
+@@ -215,39 +214,34 @@
+                 //鼠标移动
+                 function move(e) {
+                     e = e || window.event
+-                    if (status.value && isEnd.value == false) {
++                    if (dragging && status.value && isEnd.value == false && !pending.value) {
+                         if (!e.touches) {  //兼容PC端 
+                             var x = e.clientX;
+                         } else {           //兼容移动端
+-                            var x = e.touches[0].pageX;
++                            var x = e.touches[0].clientX;
+                         }
+-                        var bar_area_left = barArea.value.getBoundingClientRect().left;
+-                        var move_block_left = x - bar_area_left //小方块相对于父元素的left值
+-                        if (move_block_left >= barArea.value.offsetWidth - parseInt(parseInt(blockSize.value.width) / 2) - 2) {
+-                            move_block_left = barArea.value.offsetWidth - parseInt(parseInt(blockSize.value.width) / 2) - 2;
+-                        }
+-                        if (move_block_left <= 0) {
+-                            move_block_left = parseInt(parseInt(blockSize.value.width) / 2);
+-                        }
+-                        //拖动后小方块的left值
+-                        moveBlockLeft.value = (move_block_left - startLeft.value) + "px"
+-                        leftBarWidth.value = (move_block_left - startLeft.value) + "px"
++                        if (e.cancelable) e.preventDefault();
++                        setPosition(dragPosition + (x - startLeft.value) * 263 / (handleTravel.value || 1));
+                     }
+                 }
+ 
+                 //鼠标松开
+-                function end() {
++                function end(event) {
++                    if (event && !dragging) return;
++                    dragging = false;
+                     endMovetime.value = +new Date(); 
+                     //判断是否重合
+-                    if (status.value && isEnd.value == false) {
+-                        var moveLeftDistance = parseInt((moveBlockLeft.value || '').replace('px', ''));
+-                        moveLeftDistance = moveLeftDistance * 310/ parseInt(setSize.imgWidth)
++                    if (status.value && isEnd.value == false && !pending.value) {
++                        var moveLeftDistance = position.value;
+                         let data = {
+                             captchaType:captchaType.value,
+                             "pointJson":secretKey.value ? aesEncrypt(JSON.stringify({x:moveLeftDistance,y:5.0}),secretKey.value):JSON.stringify({x:moveLeftDistance,y:5.0}),
+                             "token":backToken.value
+                         }
++                        pending.value = true;
+                         reqCheck(data).then(res=>{
++                            pending.value = false;
++                            if (disposed) return;
+                             if (res.repCode == "0000") {
+                                 moveBlockBackgroundColor.value = '#5cb85c'
+                                 leftBarBorderColor.value = '#5cb85c'
+@@ -256,7 +250,7 @@
+                                 showRefresh.value = false
+                                 isEnd.value = true;   
+                                 if (mode.value=='pop') {
+-                                    setTimeout(()=>{
++                                    later(()=>{
+                                         proxy.$parent.clickShow = false;
+                                         refresh();
+                                     },1500)
+@@ -264,7 +258,7 @@
+                                 passFlag.value = true
+                                 tipWords.value = `${((endMovetime.value-startMoveTime.value)/1000).toFixed(2)}s验证成功`
+                                 var captchaVerification = secretKey.value ? aesEncrypt(backToken.value+'---'+JSON.stringify({x:moveLeftDistance,y:5.0}),secretKey.value):backToken.value+'---'+JSON.stringify({x:moveLeftDistance,y:5.0})
+-                                setTimeout(()=>{
++                                later(()=>{
+                                     tipWords.value = ""
+                                     proxy.$parent.closeBox();
+                                     proxy.$parent.$emit('success', {captchaVerification})
+@@ -275,12 +269,13 @@
+                                 iconColor.value = '#fff'
+                                 iconClass.value = 'icon-close'
+                                 passFlag.value = false
+-                                setTimeout(function () {
++                                isEnd.value = true;
++                                later(function () {
+                                     refresh();
+                                 }, 1000);
+                                 proxy.$parent.$emit('error',proxy)
+                                 tipWords.value = "验证失败"
+-                                setTimeout(()=>{
++                                later(()=>{
+                                         tipWords.value = ""
+                                 },1000)
+                             }
+@@ -290,13 +285,15 @@
+                 }
+ 
+                 const refresh = ()=>{
++                    if (disposed || pending.value || loading.value) return;
++                    timers.forEach(clearTimeout); timers.clear(); cancelDrag();
++                    tipWords.value = ""; passFlag.value = "";
+                     showRefresh.value = true
+                     finishText.value = ''
+ 
+                     transitionLeft.value = 'left .3s'
+-                    moveBlockLeft.value = 0
+-
+-                    leftBarWidth.value = undefined
++                    setPosition(0)
++
+                     transitionWidth.value = 'width .3s'
+ 
+                     leftBarBorderColor.value = '#ddd'
+@@ -306,7 +303,7 @@
+                     isEnd.value = false
+ 
+                     getPictrue()
+-                    setTimeout(() => {
++                    later(() => {
+                         transitionWidth.value = ''
+                         transitionLeft.value = ''
+                         text.value = explain.value
+@@ -315,11 +312,16 @@
+ 
+                 // 请求背景图片和验证图片
+                 function getPictrue(){
++                    const revision = ++imageRevision;
++                    loading.value = true; backToken.value = "";
+                     let data = {
+                         captchaType:captchaType.value
+                     }
+                     reqGet(data).then(res=>{
++                        if (disposed || revision !== imageRevision) return;
++                        loading.value = false;
+                         if (res.repCode == "0000") {
++                            tipWords.value = "";
+                             backImgBase.value = res.repData.originalImageBase64
+                             blockBackImgBase.value = res.repData.jigsawImageBase64
+                             backToken.value = res.repData.token
+@@ -329,7 +331,22 @@
+                         }
+                     })
+                 }
++                function keyboard(e) {
++                    if (loading.value || pending.value || isEnd.value || !backToken.value) return;
++                    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(e.key)) return;
++                    e.preventDefault();
++                    if (!status.value) { startMoveTime.value = +new Date(); status.value = true; }
++                    transitionLeft.value = ''; transitionWidth.value = ''; text.value = '';
++                    let value = position.value;
++                    if (e.key === 'ArrowLeft') value--;
++                    if (e.key === 'ArrowRight') value++;
++                    if (e.key === 'Home') value = 0;
++                    if (e.key === 'End') value = 263;
++                    setPosition(value);
++                    if (e.key === 'Enter' || e.key === ' ') end();
++                }
+                 return {
++                    keyboard, pending, loading, position,
+                     secretKey,           //后端返回的ase加密秘钥
+                     passFlag,         //是否通过的标识
+                     backImgBase,      //验证码背景图片
+--- a/components/Verify/VerifyPoints.vue
++++ b/components/Verify/VerifyPoints.vue
+@@ -2,23 +2,23 @@
+     <div style="position: relative"
+         >
+         <div class="verify-img-out">
+-            <div class="verify-img-panel" :style="{'width': setSize.imgWidth,
++            <div class="verify-img-panel rounded border bg-light overflow-hidden" :style="{'width': setSize.imgWidth,
+                                                    'height': setSize.imgHeight,
+                                                    'background-size' : setSize.imgWidth + ' '+ setSize.imgHeight,
+                                                    'margin-bottom': vSpace + 'px'}"
+                                                     >
+-                <div class="verify-refresh" style="z-index:3" @click="refresh" v-show="showRefresh">
+-                    <i class="iconfont icon-refresh"></i>
+-                </div>
+-                <img :src="'data:image/png;base64,'+pointBackImgBase" 
++                <button type="button" class="verify-refresh btn btn-light btn-icon btn-sm position-absolute top-0 end-0 m-2" style="z-index:3" aria-label="刷新验证码" :disabled="loading || pending" @click="refresh" v-show="showRefresh">
++                    <i class="ri-refresh-line fs-16" aria-hidden="true"></i>
++                </button>
++                <img v-if="pointBackImgBase" :src="'data:image/png;base64,'+pointBackImgBase" 
+                 ref="canvas"
+-                alt=""  style="width:100%;height:100%;display:block"
++                alt="文字点选图" role="button" tabindex="0" aria-label="文字点选图，方向键移动，回车确认" :aria-disabled="!bindingClick || loading || pending" @keydown="keyboard" @blur="keyboardActive = false" style="width:100%;height:100%;display:block"
+                 @click="bindingClick?canvasClick($event):undefined">
+ 
+-                <div v-for="(tempPoint, index) in tempPoints" :key="index" class="point-area"
++                <span v-if="keyboardActive" class="bg-body text-body border border-primary" aria-hidden="true" :style="{position:'absolute', left:(keyboardPoint.x-8)+'px', top:(keyboardPoint.y-8)+'px', width:'16px', height:'16px', lineHeight:'16px', textAlign:'center', pointerEvents:'none', zIndex:4}">+</span>
++                <div v-for="(tempPoint, index) in tempPoints" :key="index" class="point-area bg-success text-white"
+                      :style="{
+-                        'background-color':'#1abd6c',
+-                        color:'#fff',
++                        'pointer-events':'none',
+                         'z-index':9999,
+                         width:'20px',
+                         height:'20px',
+@@ -34,12 +34,10 @@
+             </div>
+         </div>
+         <!-- 'height': this.barSize.height, -->
+-        <div class="verify-bar-area"
++        <div class="verify-bar-area rounded border small" :class="feedback === 'success' ? 'verify-result-success text-success border-success' : feedback === 'error' ? 'verify-result-error text-danger border-danger' : 'bg-light text-muted'"
+              :style="{'width': setSize.imgWidth,
+-                      'color': this.barAreaColor,
+-                      'border-color': this.barAreaBorderColor,
+                       'line-height':this.barSize.height}">
+-            <span class="verify-msg">{{text}}</span>
++            <span class="verify-msg" role="status">{{text}}</span>
+         </div>
+     </div>
+ </template>
+@@ -50,8 +48,8 @@
+      * */
+     import {resetSize, _code_chars, _code_color1, _code_color2} from './../utils/util'
+     import {aesEncrypt} from "./../utils/ase"
+-    import {reqGet,reqCheck}  from "./../api/index"
+-    import { computed, onMounted, reactive, ref,watch,nextTick,toRefs, watchEffect,getCurrentInstance} from 'vue';
++    import {useCaptchaApi} from "./../api/index"
++    import { computed, onMounted, reactive, ref,watch,nextTick,toRefs, watchEffect,getCurrentInstance,onBeforeUnmount} from 'vue';
+     export default {
+         name: 'VerifyPoints',
+         props: {
+@@ -88,6 +86,17 @@
+             }
+         },
+         setup(props,context){
++            const { reqGet, reqCheck } = useCaptchaApi()
++            let disposed = false, imageRevision = 0
++            const feedback = ref('')
++            const pending = ref(false), loading = ref(false), keyboardActive = ref(false)
++            const keyboardPoint = reactive({ x: 155, y: 77 })
++            const timers = new Set()
++            function later(fn, ms) {
++                const id = setTimeout(() => { timers.delete(id); if (!disposed) fn() }, ms)
++                timers.add(id)
++            }
++            onBeforeUnmount(() => { disposed = true; imageRevision++; timers.forEach(clearTimeout) })
+             const {mode,captchaType,vSpace,imgSize,barSize} = toRefs(props)
+             const { proxy } = getCurrentInstance();
+             let secretKey = ref(''),           //后端返回的ase加密秘钥
+@@ -138,15 +147,19 @@
+                 })
+                 const canvas = ref(null)
+                 const canvasClick = (e)=>{
++                    if (disposed || pending.value || loading.value || !bindingClick.value || !backToken.value) return;
++                    if (!e.keyboard) keyboardActive.value = false;
+                     checkPosArr.push(getMousePos(canvas, e));
+                     if (num.value == checkNum.value) {
++                        pending.value = true;
++                        bindingClick.value = false;
+                         num.value = createPoint(getMousePos(canvas, e));
+                         //按比例转换坐标值
+                         let arr = pointTransfrom(checkPosArr,setSize)
+                         checkPosArr.length = 0
+                         checkPosArr.push(...arr);
+                         //等创建坐标执行完
+-                        setTimeout(() => {
++                        later(() => {
+                             // var flag = this.comparePos(this.fontPos, this.checkPosArr);
+                             //发送后端请求
+                             var captchaVerification = secretKey.value? aesEncrypt(backToken.value+'---'+JSON.stringify(checkPosArr),secretKey.value):backToken.value+'---'+JSON.stringify(checkPosArr)
+@@ -156,13 +169,17 @@
+                                 "token":backToken.value
+                             }
+                             reqCheck(data).then(res=>{
++                                pending.value = false;
++                                if (disposed) return;
+                                 if (res.repCode == "0000") {
+                                     barAreaColor.value = '#4cae4c'
+                                     barAreaBorderColor.value = '#5cb85c'
++                                    feedback.value = 'success'
+                                     text.value = '验证成功'
++                                    showRefresh.value = false
+                                     bindingClick.value = false
+                                     if (mode.value=='pop') {
+-                                        setTimeout(()=>{
++                                        later(()=>{
+                                             proxy.$parent.clickShow = false;
+                                             refresh();
+                                         },1500)
+@@ -172,8 +189,9 @@
+                                     proxy.$parent.$emit('error', proxy)
+                                     barAreaColor.value = '#d9534f'
+                                     barAreaBorderColor.value = '#d9534f'
++                                    feedback.value = 'error'
+                                     text.value = '验证失败'
+-                                    setTimeout(() => {
++                                    later(() => {
+                                         refresh();
+                                     }, 700);
+                                 }
+@@ -196,6 +214,9 @@
+                     return num.value+1;
+                 }
+                 const refresh = function () {
++                    if (disposed || pending.value || loading.value) return;
++                    timers.forEach(clearTimeout); timers.clear(); keyboardActive.value = false;
++                    feedback.value = ''
+                     tempPoints.splice(0, tempPoints.length)
+                     barAreaColor.value = '#000'
+                     barAreaBorderColor.value = '#ddd'
+@@ -204,23 +225,29 @@
+                     checkPosArr.splice(0, checkPosArr.length)
+                     num.value = 1
+                     getPictrue();
+-                    text.value = '验证失败'
++                    text.value = ''
+                     showRefresh.value = true
+                 }
+ 
+                 // 请求背景图片和验证图片
+                 function getPictrue() {
++                    const revision = ++imageRevision;
++                    loading.value = true; bindingClick.value = false; backToken.value = '';
+                     let data = {
+                         captchaType:captchaType.value
+                     }
+                     reqGet(data).then(res=>{
++                        if (disposed || revision !== imageRevision) return;
++                        loading.value = false;
+                         if (res.repCode == "0000") {
++                            bindingClick.value = true;
+                             pointBackImgBase.value = res.repData.originalImageBase64
+                             backToken.value = res.repData.token
+                             secretKey.value = res.repData.secretKey
+                             poinTextList.value = res.repData.wordList
+                             text.value = '请依次点击【' + poinTextList.value.join(",") + '】'
+                         }else{
++                            feedback.value = 'error';
+                             text.value = res.repMsg;
+                         }
+                     })
+@@ -234,7 +261,21 @@
+                     })
+                     return newPointArr
+                 }
++                function keyboard(e) {
++                    if (!bindingClick.value || pending.value || loading.value) return;
++                    if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter',' '].includes(e.key)) return;
++                    e.preventDefault(); keyboardActive.value = true;
++                    const step = e.shiftKey ? 10 : 2;
++                    if (e.key === 'ArrowLeft') keyboardPoint.x -= step;
++                    if (e.key === 'ArrowRight') keyboardPoint.x += step;
++                    if (e.key === 'ArrowUp') keyboardPoint.y -= step;
++                    if (e.key === 'ArrowDown') keyboardPoint.y += step;
++                    keyboardPoint.x = Math.max(0, Math.min(parseInt(setSize.imgWidth), keyboardPoint.x));
++                    keyboardPoint.y = Math.max(0, Math.min(parseInt(setSize.imgHeight), keyboardPoint.y));
++                    if (e.key === 'Enter' || e.key === ' ') canvasClick({offsetX:keyboardPoint.x, offsetY:keyboardPoint.y, keyboard:true});
++                }
+                 return {
++                    feedback, pending, loading, keyboard, keyboardActive, keyboardPoint,
+                     secretKey,
+                     checkNum,
+                     fontPos,
+@@ -257,4 +298,4 @@
+                 }
+         },
+     }
+-</script>+</script>

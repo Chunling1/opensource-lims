@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test'
+
+test('discarding commission edits releases the modal scroll lock before adding a sample', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('/#/commissions/registration/commissions/demo-wt-1/edit')
+  await page.getByLabel('项目名称', { exact: true }).fill('不应保存的修改')
+  await page.getByRole('link', { name: '返回委托登记', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: '离开当前页面？', exact: true })
+  await confirmation.getByRole('button', { name: '继续编辑', exact: true }).click()
+  await expect(confirmation).toBeHidden()
+  await expect(page.getByLabel('项目名称', { exact: true })).toHaveValue('不应保存的修改')
+  await page.getByRole('link', { name: '返回委托登记', exact: true }).click()
+  await confirmation.getByRole('button', { name: '放弃修改并离开', exact: true }).click()
+  await page.getByRole('button', { name: 'WT202609001 更多操作', exact: true }).click()
+  await page.getByRole('menuitem', { name: '新增样品', exact: true }).click()
+  await expect(page.getByRole('form', { name: '样品表单' })).toBeVisible()
+  await expect(page.locator('body')).not.toHaveClass(/modal-open/)
+  await expect.poll(() => page.locator('body').evaluate(el => getComputedStyle(el).overflow)).not.toBe('hidden')
+  await expect(page.locator('.modal-backdrop')).toHaveCount(0)
+  await page.mouse.move(700, 400)
+  await page.mouse.wheel(0, 700)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100)
+  // Opening and closing another modal must still release its own scroll lock.
+  await page.getByRole('button', { name: '选择检测项目', exact: true }).click()
+  const projects = page.getByRole('dialog', { name: '选择检测项目', exact: true })
+  await expect(page.locator('body')).toHaveClass(/modal-open/)
+  await projects.getByRole('button', { name: '关闭弹窗', exact: true }).click()
+  await expect(page.locator('body')).not.toHaveClass(/modal-open/)
+  await expect.poll(() => page.locator('body').evaluate(el => getComputedStyle(el).overflow)).not.toBe('hidden')
+  expect(errors).toEqual([])
+})

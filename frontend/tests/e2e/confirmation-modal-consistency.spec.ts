@@ -1,0 +1,75 @@
+import { test, expect } from '@playwright/test'
+
+test('approval failure preserves both dialogs and prevents closing or duplicate submits while pending', async ({ page }) => {
+  await page.request.post('/api/registration/session')
+  expect((await page.request.post('/api/registration/quality/requests/save', { headers: { 'X-Demo-Actor': 'business' }, data: { reason: '审批弹窗保留测试', items: ['加盖检测合同章'], other: '', copies: 1, files: [], intent: 'submit' } })).ok()).toBe(true)
+  await page.addInitScript(() => localStorage.setItem('lims.identity.v1', 'approver'))
+  await page.goto('/#/quality/approvals?reason=审批弹窗保留测试')
+  await page.getByRole('table', { name: '日常事务审批列表', exact: true }).getByRole('button', { name: /更多操作/ }).click()
+  await page.getByRole('menuitem', { name: '审批', exact: true }).click()
+  const parent = page.getByRole('dialog', { name: '审批申请', exact: true })
+  await parent.getByRole('button', { name: '审批', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: '审批意见', exact: true })
+  await confirmation.getByLabel('审批意见', { exact: true }).fill('核对后的意见')
+  let release!: () => void, requests = 0
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/quality/approvals/approve', async route => {
+    requests++
+    if (requests !== 1) return route.continue()
+    await gate
+    await route.fulfill({ status: 500, json: { error: { code: 'INTERNAL', message: '审批服务暂不可用' } } })
+  })
+  try {
+    await confirmation.getByRole('button', { name: '确认审批', exact: true }).click()
+    await expect(confirmation.getByRole('button', { name: '正在处理…', exact: true })).toBeDisabled()
+    await expect(confirmation.getByRole('button', { name: '关闭弹窗', exact: true })).toBeDisabled()
+    await expect(confirmation.getByRole('button', { name: '取消', exact: true })).toBeDisabled()
+    await confirmation.press('Escape')
+    await expect(confirmation).toBeVisible()
+    expect(requests).toBe(1)
+  } finally { release() }
+  await expect(confirmation.getByText('审批服务暂不可用', { exact: true })).toBeVisible()
+  await expect(parent).toBeVisible()
+  await expect(confirmation.getByLabel('审批意见', { exact: true })).toHaveValue('核对后的意见')
+  await confirmation.getByRole('button', { name: '确认审批', exact: true }).click()
+  await expect(confirmation).toBeHidden()
+  await expect(parent).toBeHidden()
+  expect(requests).toBe(2)
+})
+
+test('discard entry edits uses a separate confirmation and Escape preserves the draft', async ({ page }) => {
+  await page.goto('/#/testing/data-entry/demo-yp-76')
+  await page.locator('#trial-conclusion').fill('未保存的试验结论')
+  const back = page.getByRole('button', { name: '返回', exact: true })
+  await back.click()
+  const confirmation = page.getByRole('dialog', { name: '放弃填写', exact: true })
+  await expect(confirmation).toBeVisible()
+  await expect(page.locator('#trial-conclusion')).toHaveValue('未保存的试验结论')
+  await confirmation.press('Escape')
+  await expect(confirmation).toBeHidden()
+  await expect(back).toBeFocused()
+  await back.click()
+  await confirmation.getByRole('button', { name: '放弃填写', exact: true }).click()
+  await expect(page).toHaveURL(/data-entry$/)
+})
+
+test('reload after a version conflict asks separately and cancellation preserves input', async ({ page }) => {
+  await page.goto('/#/commissions/registration/commissions/demo-wt-1/edit')
+  const field = page.getByLabel('项目名称', { exact: true })
+  await field.fill('保留未保存的项目名称')
+  await page.route('**/api/registration/commissions/demo-wt-1', async route => {
+    if (route.request().method() !== 'PUT') return route.continue()
+    await route.fulfill({ status: 409, json: { error: { code: 'VERSION_CONFLICT', message: '委托已更新，请重新加载。' } } })
+  })
+  await page.getByRole('button', { name: '保存', exact: true }).click()
+  const reload = page.getByRole('button', { name: '重新加载', exact: true }).last()
+  await reload.click()
+  const confirmation = page.getByRole('dialog', { name: '重新加载', exact: true })
+  await expect(confirmation).toContainText('重新加载将替换当前未保存的输入')
+  await confirmation.getByRole('button', { name: '保留输入', exact: true }).click()
+  await expect(field).toHaveValue('保留未保存的项目名称')
+  await reload.click()
+  await confirmation.getByRole('button', { name: '确认重新加载', exact: true }).click()
+  await expect(confirmation).toBeHidden()
+  await expect(field).not.toHaveValue('保留未保存的项目名称')
+})

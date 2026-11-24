@@ -1,0 +1,43 @@
+{
+  "version": "2026-1.1",
+  "effectiveDate": "2026-08-03",
+  "renderMode": "stable WT/YP field-code replacement in document.xml",
+  "fieldDictionary": {
+    "source": "委托单样品单模板字段字典-20260731.xlsx",
+    "runtime": "field_dictionary.json",
+    "runtimeSha256": "1224B5EC83ECBCBB87C13011808A47217509C945FCB82B4AA7B015ABE05BDD67",
+    "version": "v1.0",
+    "fieldCount": 100,
+    "sourceSha256": "7D13DB26496A07E716B88CB08292E83C436F9830EF989C8CEFFDC74F2EDF6CFC"
+  },
+  "layoutCheck": {
+    "paper": "A4",
+    "pages": {
+      "product": 4,
+      "engineering": 3
+    },
+    "sourceAndDocxPageSizesEqual": true,
+    "publicWpsCompatibility": "preserve template pagination and static rows; populated sized rows use their existing exact height, the four unsized product sample-status rows use a three-line fitted height, and inserted values use adaptive font sizing"
+  },
+  "templates": {
+    "product": {
+      "source": "source/LAB-4204d-202601.docx",
+      "sourceSha256": "6C3B1D287283CDDA070214B49B41EFF741A48C02CE0C34965B22536DACA30A66",
+      "runtime": "委托单-产品类.docx",
+      "runtimeSha256": "AF52FC52E5127C1033D9B6CEE367F799AD142F9DD46BDBD75F4BFB9C81A22477",
+      "expectedPages": 4,
+      "compatibilityNormalization": {
+        "scope": "numbered text placeholders, text runs, and row height rule only",
+        "change": "convert 92 legacy aliases to stable WT/YP fields; replace content without adding page breaks, paragraphs, or table rows; retain populated rows' existing height values with exact rule; normalize the four unsized sample-status rows to 1050 twips; leave static rows automatic; adapt inserted text down to 6pt",
+        "heightValuesChanged": false
+      }
+    },
+    "engineering": {
+      "source": "source/4204g-委托合同单(工程类)-2026_1.doc",
+      "sourceSha256": "93AC20B286C2FE84B471DB7D3C8B5B03D3DB8FA40E1BC43A86B3874D8C331980",
+      "runtime": "委托单-工程类.docx",
+      "runtimeSha256": "2862ABA9E2FA9523734E4CF026EDD794BC3E6FF3C8D85B23B76CA1AD29512DD5",
+      "expectedPages": 3
+    }
+  }
+}

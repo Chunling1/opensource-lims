@@ -1,0 +1,46 @@
+import { test, expect } from '@playwright/test'
+import { clientYearRange } from '../../src/services/common/date'
+import { pickDateRange, pickRangeDay } from './helpers/dateRange'
+
+test('commission date range cannot be cleared and requires complete selection with a last-year default', async ({ page }) => {
+  const range = clientYearRange()
+  const requests: Record<string, unknown>[] = []
+  page.on('request', r => { if (r.url().endsWith('/commissions/query')) requests.push(r.postDataJSON()) })
+  await page.goto('/#/commissions/registration?cFrom=&cTo=')
+  const form = page.getByRole('form', { name: '委托查询', exact: true })
+  const table = page.getByRole('table', { name: '委托列表', exact: true })
+  const dates = form.getByLabel('委托日期', { exact: true })
+  await expect(dates).toHaveValue(`${range.from} 至 ${range.to}`)
+  await expect(table.locator('tbody tr')).toHaveCount(5)
+  await expect(form.getByRole('button', { name: '清空委托日期', exact: true })).toHaveCount(0)
+  await dates.focus()
+  await dates.press('Delete'); await dates.press('Backspace')
+  await expect(dates).toHaveValue(`${range.from} 至 ${range.to}`)
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await page.reload()
+  await expect(dates).toHaveValue(`${range.from} 至 ${range.to}`)
+  await expect(table.locator('tbody tr')).toHaveCount(5)
+  await table.getByRole('checkbox', { name: '选择委托 WT202609001', exact: true }).check()
+  const before = requests.length
+  await pickDateRange(page, dates, range.to, range.to)
+  await expect(dates).toHaveValue(`${range.to} 至 ${range.to}`)
+  expect(requests).toHaveLength(before)
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await expect(table.locator('tbody tr')).toHaveCount(1)
+  expect(page.url()).not.toContain('current=')
+  expect(requests.at(-1)).toMatchObject({ from: range.to, to: range.to })
+  await dates.click()
+  await pickRangeDay(page, '2000-01-01')
+  const partialCount = requests.length
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await expect(form.getByRole('alert')).toContainText('请选择结束日期')
+  expect(requests).toHaveLength(partialCount)
+  await dates.click()
+  await pickRangeDay(page, '2000-12-31')
+  await expect(dates).toHaveValue('2000-01-01 至 2000-12-31')
+  await expect(form.getByRole('alert')).toHaveCount(0)
+  await form.getByRole('button', { name: '查询', exact: true }).click()
+  await expect(table).toContainText('暂无符合条件的委托')
+  await page.reload()
+  await expect(dates).toHaveValue('2000-01-01 至 2000-12-31')
+})

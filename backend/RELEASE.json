@@ -1,0 +1,22 @@
+{
+  "release_id": "20260902-docparser-guide-marker-01",
+  "status": "production-candidate",
+  "engine": "docparser-original-v3",
+  "baseline": "20260902-report-created-at-01",
+  "original_archive_sha256": "49ec376aaa904473aa0297828693f808d3b375b9bea85b463febcdda4484b5cc",
+  "original_source_policy": "copied unchanged and verified against app/docparser_source_manifest.json before every render",
+  "database_migration_required": true,
+  "shared_virtualenv_change_required": false,
+  "activation": {
+    "DOCUMENT_TEMPLATE_ENGINE": "docparser-original-v3",
+    "DOCPARSER_ROLLOUT_STARTED_AT": "required ISO-8601 timestamp"
+  },
+  "rollback": "point lims-backend WorkingDirectory and /opt/lims/current back to 20260902-report-created-at-01",
+  "change": "align the surrounding PDF compositor guide marker and accept the original one-cover or cover-plus-home page variants; original DocParser package and template files remain byte-identical",
+  "verification": {
+    "new_integration_tests": "33 passed",
+    "existing_report_regression_tests": "14 passed",
+    "word_visual_samples": "2 passed",
+    "original_template_variants": "9 passed"
+  }
+}

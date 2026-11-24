@@ -1,0 +1,125 @@
+import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+
+const root = '/commissions/registration'
+const defaults = ['委托编号', '委托经办人', '委托单位', '样品/工程名称', '委托状态', '委托日期', '应收费用']
+const all = ['合同编号', '委托编号', '委托经办人', '委托单位', '样品/工程名称', '委托状态', '委托日期', '应收费用', '委托人', '建设单位', '施工单位']
+const keys = 'contract,code,owner,customer,name,status,commissionDate,receivableAmount,contact,constructionUnit,constructionCompany'
+
+test('column choices preserve queries and selections, survive navigation and restore defaults', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto(`/#${root}?cFrom=&cTo=&cPage=2&current=demo-wt-6`)
+  const table = page.getByRole('table', { name: '委托列表', exact: true })
+  const samples = page.getByRole('table', { name: '样品列表', exact: true })
+  await expect(table.locator('thead th')).toHaveText(['', ...defaults, ''])
+  await expect(samples.locator('tbody tr')).toHaveCount(6)
+  const selected = table.getByRole('checkbox', { name: '选择委托 WT202609006', exact: true })
+  await samples.getByRole('checkbox', { name: '全选当前页样品' }).check()
+  const requests: string[] = []
+  page.on('request', req => { if (/\/api\/registration\/(commissions|samples)\/query$/.test(req.url())) requests.push(req.url()) })
+  await page.getByRole('region', { name: '委托列表区域', exact: true }).getByRole('button', { name: '显示', exact: true }).click()
+  const menu = page.getByRole('dialog', { name: '委托显示列', exact: true })
+  await expect(menu.getByRole('checkbox', { name: '委托编号', exact: true })).toBeDisabled()
+  await page.evaluate(() => window.scrollTo({ top: 75, behavior: 'instant' }))
+  await menu.getByRole('checkbox', { name: '合同编号', exact: true }).scrollIntoViewIfNeeded()
+  const before = await page.evaluate(() => scrollY)
+  await menu.getByRole('checkbox', { name: '合同编号', exact: true }).check()
+  await expect(table.getByRole('columnheader', { name: '合同编号', exact: true })).toBeVisible()
+  expect(await page.evaluate(() => scrollY)).toBe(before)
+  await menu.getByRole('checkbox', { name: '委托人', exact: true }).check()
+  await menu.getByRole('checkbox', { name: '委托状态', exact: true }).uncheck()
+  await expect(table.getByRole('columnheader', { name: '委托状态', exact: true })).toHaveCount(0)
+  await expect(selected).toBeChecked()
+  await expect(samples.getByRole('checkbox', { name: '全选当前页样品' })).toBeChecked()
+  await expect(page.getByRole('navigation', { name: '委托分页', exact: true }).getByRole('button', { name: '第 2 页', exact: true })).toHaveAttribute('aria-current', 'page')
+  expect(requests).toEqual([])
+  const configuredUrl = page.url()
+  await menu.getByRole('button', { name: '完成', exact: true }).click()
+  await table.getByRole('link', { name: 'WT202609006', exact: true }).click()
+  await expect(page.getByRole('link', { name: '修改委托', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: '打印委托单', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '更多操作', exact: true })).toHaveCount(0)
+  await page.getByRole('link', { name: '返回委托登记', exact: true }).click()
+  await expect(page).toHaveURL(configuredUrl)
+  await table.getByRole('button', { name: 'WT202609006 更多操作', exact: true }).click()
+  await page.getByRole('menuitem', { name: '修改', exact: true }).click()
+  await page.getByRole('link', { name: '返回委托登记', exact: true }).click()
+  await expect(page).toHaveURL(configuredUrl)
+  await expect(table.getByRole('columnheader', { name: '委托人', exact: true })).toBeVisible()
+  await expect(selected).toBeChecked()
+  await page.reload()
+  await expect(table.getByRole('columnheader', { name: '委托状态', exact: true })).toHaveCount(0)
+  await expect(table.getByRole('columnheader', { name: '合同编号', exact: true })).toBeVisible()
+  await page.getByRole('region', { name: '委托列表区域', exact: true }).getByRole('button', { name: '显示', exact: true }).click()
+  await page.getByRole('dialog', { name: '委托显示列', exact: true }).getByRole('button', { name: '恢复默认', exact: true }).click()
+  await page.getByRole('dialog', { name: '委托显示列', exact: true }).getByRole('button', { name: '完成', exact: true }).click()
+  await expect(table.locator('thead th')).toHaveText(['', ...defaults, ''])
+  await expect(selected).toBeChecked()
+  await expect(page).toHaveURL(/cPage=2/)
+  expect(page.url()).not.toContain('cColumns')
+})
+
+test('legacy column links remain compatible and exports include all fields while columns are hidden', async ({ page }) => {
+  await page.goto(`/#${root}?cFrom=&cTo=&contractColumn=1&current=demo-wt-1`)
+  const table = page.getByRole('table', { name: '委托列表', exact: true })
+  await expect(table.locator('thead th')).toHaveText(['', '合同编号', ...defaults, ''])
+  await page.getByRole('region', { name: '委托列表区域', exact: true }).getByRole('button', { name: '显示', exact: true }).click()
+  await page.getByRole('dialog', { name: '委托显示列', exact: true }).getByRole('button', { name: '恢复默认', exact: true }).click()
+  await page.getByRole('dialog', { name: '委托显示列', exact: true }).getByRole('button', { name: '完成', exact: true }).click()
+  await expect(table.getByRole('columnheader', { name: '合同编号', exact: true })).toHaveCount(0)
+  await page.getByRole('group', { name: '委托工具栏', exact: true }).getByRole('button', { name: '导出', exact: true }).click()
+  const downloading = page.waitForEvent('download')
+  await page.locator('.dropdown-menu.show').getByRole('button', { name: '导出已选记录（1）', exact: true }).click()
+  const csv = await readFile((await (await downloading).path())!, 'utf8')
+  expect(csv.replace(/^\uFEFF/, '').split('\r\n')[0]).toBe(all.map(name => `"${name}"`).join(','))
+  expect(csv.split('\r\n')).toHaveLength(2)
+  expect(csv).toContain('2026091800000001HT')
+  await page.getByRole('button', { name: '委托日期', exact: true }).click()
+  await expect(table.getByRole('columnheader', { name: '委托日期', exact: true })).toHaveAttribute('aria-sort', 'ascending')
+  await expect(page).toHaveURL(/cSort=commissionDate/)
+  // Empty states still span exactly the rendered columns.
+  await page.goto(`/#${root}?cFrom=&cTo=&cColumns=code&cKeyword=不存在的委托`)
+  await expect(table.getByRole('cell', { name: /暂无符合条件的委托/ })).toHaveAttribute('colspan', '3')
+})
+
+test('all columns and long values fit desktop and phone viewports in both themes', async ({ page }, testInfo) => {
+  const project = '长项目名称：' + '建设工程材料检测与环境监测'.repeat(6)
+  const customer = '委托单位甲；委托单位乙；' + '工程建设有限公司'.repeat(8)
+  await page.route('**/api/registration/commissions/query', async route => {
+    const response = await route.fetch(), data = await response.json()
+    data.items[0] = { ...data.items[0], name: project, customer, commissionDate: '2024-01-02', receivableAmount: 0, contact: '委托联系人甲' }
+    await route.fulfill({ response, json: data })
+  })
+  await page.goto(`/#${root}?cFrom=&cTo=&cColumns=${keys}`)
+  const table = page.getByRole('table', { name: '委托列表', exact: true })
+  await expect(table.locator('thead th')).toHaveText(['', ...all, ''])
+  const cells = table.locator('tbody tr').first().locator('td')
+  await expect(cells.nth(5)).toHaveText(project)
+  await expect(cells.nth(4)).toHaveText(customer)
+  await expect(cells.nth(7)).toHaveText('2024-01-02')
+  await expect(cells.nth(8)).toHaveText('0.00')
+  await expect(cells.nth(9)).toHaveText('委托联系人甲')
+  await expect(cells.nth(10)).toHaveText('—')
+  await expect(cells.nth(11)).toHaveText('—')
+  for (const [width, theme] of [[1440, 'light'], [1440, 'dark'], [390, 'light'], [320, 'dark']] as const) {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.evaluate(t => document.documentElement.setAttribute('data-bs-theme', t), theme)
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+    const dateHeader = table.getByRole('columnheader', { name: '委托日期', exact: true })
+    const emphasis = await dateHeader.evaluate(element => {
+      const reference = document.createElement('span'); reference.style.color = 'var(--vz-emphasis-color)'
+      element.append(reference); const color = getComputedStyle(reference).color; reference.remove(); return color
+    })
+    await expect(dateHeader.getByRole('button')).toHaveCSS('color', emphasis)
+    await expect(cells.nth(5)).toHaveCSS('white-space', 'normal')
+    for (const index of [4, 5, 10, 11]) {
+      await expect(cells.nth(index)).toHaveCSS('white-space', 'normal')
+      expect(await cells.nth(index).evaluate(node => node.getBoundingClientRect().width)).toBeGreaterThanOrEqual(160)
+    }
+    for (const index of [1, 2, 3, 6, 7, 8, 9]) await expect(cells.nth(index)).toHaveCSS('white-space', 'nowrap')
+    await expect(cells.nth(8)).toHaveCSS('text-align', 'right')
+    if (width < 400) await expect.poll(() => table.locator('..').evaluate(e => e.scrollWidth > e.clientWidth)).toBe(true)
+    await page.screenshot({ path: testInfo.outputPath(`commission-columns-${width}-${theme}.png`) })
+  }
+})

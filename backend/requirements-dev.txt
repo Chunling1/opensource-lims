@@ -1,0 +1,9 @@
+# 开发期质量/安全工具（开源）。安装：pip install -r requirements-dev.txt
+# 用法：
+#   ruff check app run.py          代码质量静态检查（含 --fix 自动修复）
+#   bandit -r app                  安全扫描（注入/硬编码密钥等）
+#   pytest                         测试
+ruff>=0.6
+bandit>=1.7
+pytest>=8.0
+pytest-cov>=6.0,<7

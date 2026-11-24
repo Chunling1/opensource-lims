@@ -1,0 +1,25 @@
+import type {FormSchema} from '../types/forms'
+export interface ReportEntryForm {temperature:string;pressure:string;humidity:string;calibrationPlace:string;resultStatus:string;unqualifiedParams:string;recordNo:string;result:string;conclusion:string;remark:string}
+// Only field/data adaptation. Rendering and visual tokens remain in the supplied template.
+export function createReportEntrySchema(context:{isCalibrationReport:boolean;entryStaffDisplay:string}):FormSchema<ReportEntryForm>{return {sections:[{id:'report-entry-section-0',title:"检测依据 / 设备 / 试验信息",fields:[{id:"report-entry-field-0",label:"检测标准",width:'col-12',control:'custom',slot:'report-entry-field-0'},
+{id:"report-entry-field-1",label:"标准显示",control:'custom',slot:'report-entry-field-1'},
+{id:"report-entry-field-2",label:"标准分隔",control:'custom',slot:'report-entry-field-2'},
+{id:"report-entry-field-3",label:"试验区间",width:'col-12',control:'custom',slot:'report-entry-field-3'},
+{id:"report-entry-field-4",label:"仪器设备",width:'col-12',control:'custom',slot:'report-entry-field-4'},
+{id:"report-entry-field-5",label:"校准时间",control:'custom',slot:'report-entry-field-5'},
+{id:"report-entry-field-6",label:"温度（℃）",visible:(model)=>context.isCalibrationReport,control:'text',placeholder:"支持范围，如 26.6～27.4",binding:{get:(model)=>String(model.temperature ?? ''),set:(model,value)=>{model.temperature=value}}},
+{id:"report-entry-field-7",label:"大气压力（hPa）",visible:(model)=>context.isCalibrationReport,control:'text',placeholder:"填写实测值或范围，单位 hPa",binding:{get:(model)=>String(model.pressure ?? ''),set:(model,value)=>{model.pressure=value}}},
+{id:"report-entry-field-8",label:"湿度（%RH）",visible:(model)=>context.isCalibrationReport,control:'text',placeholder:"支持范围，如 68.7～70.1",binding:{get:(model)=>String(model.humidity ?? ''),set:(model,value)=>{model.humidity=value}}},
+{id:"report-entry-field-9",label:"校准地点",visible:(model)=>context.isCalibrationReport,control:'text',placeholder:"沿用样品检测地点，可修改",binding:{get:(model)=>String(model.calibrationPlace ?? ''),set:(model,value)=>{model.calibrationPlace=value}}},
+{id:"report-entry-field-10",label:"报告日期",control:'custom',slot:'report-entry-field-10'}]},
+{id:'report-entry-section-1',title:"人员与审批",fields:[{id:"report-entry-field-11",label:"录入人员",control:'text',disabled:true,binding:{get:(model)=>String(context.entryStaffDisplay ?? '')}},
+{id:"report-entry-field-12",label:"主检1",control:'custom',slot:'report-entry-field-12'},
+{id:"report-entry-field-13",label:"主检2",control:'custom',slot:'report-entry-field-13'},
+{id:"report-entry-field-14",label:"审核人",control:'custom',slot:'report-entry-field-14'},
+{id:"report-entry-field-15",label:"批准人",control:'custom',slot:'report-entry-field-15'}]},
+{id:'report-entry-section-2',title:"结论与报告首页",fields:[{id:"report-entry-field-16",label:"结论状态",control:'custom',slot:'report-entry-field-16'},
+{id:"report-entry-field-17",label:"不合格参数",visible:(model)=>model.resultStatus === '判定不合格',control:'text',placeholder:"必填：填写不合格参数",binding:{get:(model)=>String(model.unqualifiedParams ?? ''),set:(model,value)=>{model.unqualifiedParams=value}}},
+{id:"report-entry-field-18",label:"记录编号",control:'text',placeholder:"请填写",binding:{get:(model)=>String(model.recordNo ?? ''),set:(model,value)=>{model.recordNo=value}}},
+{id:"report-entry-field-19",label:"实测值",control:'text',placeholder:"如 0.0328 W/(m·K)",binding:{get:(model)=>String(model.result ?? ''),set:(model,value)=>{model.result=value}}},
+{id:"report-entry-field-20",label:"结论",width:'col-12',control:'text',placeholder:"填写报告结论",binding:{get:(model)=>String(model.conclusion ?? ''),set:(model,value)=>{model.conclusion=value}}},
+{id:"report-entry-field-21",label:"备注",width:'col-12',control:'textarea',placeholder:"与样品登记中的报告首页备注同步",binding:{get:(model)=>String(model.remark ?? ''),set:(model,value)=>{model.remark=value}}}]}]}}

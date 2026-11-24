@@ -1,0 +1,40 @@
+import { expect, test } from '@playwright/test'
+import { pickDateRange } from './helpers/dateRange'
+
+test('report entry validates the current draft, then saves it before navigation', async ({ page }) => {
+  await page.goto('/#/testing/data-entry/demo-yp-76')
+  await page.locator('#trial-conclusion').fill('进入报告前保存的结论')
+  await page.locator('#trial-conclusionStatus').selectOption('')
+  await page.getByRole('button', { name: '报告填写', exact: true }).click()
+  await expect(page).toHaveURL(/data-entry\/demo-yp-76$/)
+  await expect(page.getByRole('alert', { name: '操作提示', exact: true })).toContainText('报告填写前请填写此项。')
+  await expect(page.locator('#trial-conclusion')).toHaveValue('进入报告前保存的结论')
+  await expect(page.locator('#trial-conclusionStatus')).toHaveClass(/is-invalid/)
+  await page.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(page.getByText('试验信息已保存。', { exact: true })).toBeVisible()
+  await page.locator('#trial-conclusionStatus').selectOption('合格')
+  await page.getByRole('button', { name: '选择试验人1', exact: true }).click()
+  const people = page.getByRole('dialog', { name: '选择试验人1', exact: true })
+  await people.getByRole('radio', { name: '选择 李检测（analyst）', exact: true }).check()
+  await people.getByRole('button', { name: '确定', exact: true }).click()
+  await page.getByRole('button', { name: '添加日期', exact: true }).click()
+  await page.getByRole('button', { name: '删除第1项试验日期', exact: true }).click()
+  await pickDateRange(page, page.locator('#trial-date-0'), '2026-09-01', '2026-09-02')
+  await page.getByRole('button', { name: '报告填写', exact: true }).click()
+  await expect(page).toHaveURL(/demo-yp-76\/report/)
+  await expect(page.getByRole('tab', { name: '报告模板', exact: true })).toBeVisible()
+  const detail = await (await page.request.get('/api/registration/samples/demo-yp-76/data-entry', { headers: { 'X-Demo-Actor': 'admin' } })).json()
+  expect(detail.form).toMatchObject({ conclusion: '进入报告前保存的结论', conclusionStatus: '合格', tester1Id: 'analyst', testStartDate: '2026-09-01', testEndDate: '2026-09-02' })
+})
+
+test('direct report entry redirects incomplete data to trial fields; read-only reports remain accessible', async ({ page }) => {
+  await page.goto('/#/testing/data-entry/demo-yp-76/report')
+  await expect(page).toHaveURL(/demo-yp-76\?.*checkReport=1/)
+  await expect(page.getByRole('tab', { name: '试验信息', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#trial-conclusion')).toHaveClass(/is-invalid/)
+  await expect(page.getByRole('alert', { name: '操作提示', exact: true })).toContainText('报告填写前请填写此项。')
+  await page.goto('/#/testing/data-entry/demo-yp-76/report?mode=view')
+  await expect(page.getByRole('tab', { name: '报告模板', exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/report\?mode=view/)
+})
+
