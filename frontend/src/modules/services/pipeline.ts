@@ -305,16 +305,7 @@ export interface ErpContract {
 }
 
 export async function fetchErpContracts() {
-  const erp = await request<{ rows: ErpContract[] }>('/api/erp/contracts').then((d) => d.rows)
-  // 合并客户协议维护「已登记」推送的合同库（流程图 #2 终点）
-  let library: ErpContract[] = []
-  try {
-    library = await request<{ rows: ErpContract[] }>('/api/agreements/contract-library').then((d) => d.rows)
-  } catch {
-    library = []
-  }
-  const seen = new Set(erp.map((c) => c.contractNo))
-  return [...erp, ...library.filter((c) => !seen.has(c.contractNo))]
+  return request<{ rows: ErpContract[] }>('/api/erp/contracts').then((d) => d.rows)
 }
 
 export interface SamplePickup {
@@ -635,37 +626,6 @@ export interface Agreement {
   testDepartment?: string
   registeredAt?: string
   remark?: string
-}
-
-export function fetchAgreementDetail(id: number) {
-  return request<Agreement>(`/api/agreements/${id}`)
-}
-export function fetchAgreements(params: { keyword?: string; status?: string; projection?: 'list' } = {}) {
-  return request<{ rows: Agreement[] }>('/api/agreements/query', {
-    method: 'POST',
-    body: JSON.stringify(params),
-  }).then((d) => d.rows)
-}
-
-export function createAgreement(payload: Agreement) {
-  return request<Agreement>('/api/agreements/create', { method: 'POST', body: JSON.stringify(payload) }).then(async row => { if (row.id) await rememberCorrection('agreements', row.id).catch(() => undefined); return row })
-}
-
-export function updateAgreement(id: number, payload: Agreement) {
-  if (canCorrect()) return correctForm<Agreement>('agreements', id, payload)
-  return request<Agreement>(`/api/agreements/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
-}
-
-export function deleteAgreement(id: number) {
-  return request<{ agreementNo: string }>(`/api/agreements/${id}`, { method: 'DELETE' })
-}
-
-export function completeAgreement(id: number) {
-  return request<Agreement>(`/api/agreements/${id}/complete`, { method: 'POST', body: JSON.stringify({}) })
-}
-
-export function uncompleteAgreement(id: number) {
-  return request<Agreement>(`/api/agreements/${id}/uncomplete`, { method: 'POST', body: JSON.stringify({}) })
 }
 
 export interface AgreementDepartment {

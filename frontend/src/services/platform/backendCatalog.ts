@@ -121,54 +121,6 @@ export const backendCatalog = {
     "method": "POST",
     "path": "/api/admin/cnas/batches/<int:batch_id>/activate"
   },
-  "POST /api/agreements/query": {
-    "method": "POST",
-    "path": "/api/agreements/query"
-  },
-  "POST /api/agreements/create": {
-    "method": "POST",
-    "path": "/api/agreements/create"
-  },
-  "PUT /api/agreements/<int:aid>": {
-    "method": "PUT",
-    "path": "/api/agreements/<int:aid>"
-  },
-  "POST /api/agreements/<int:aid>/complete": {
-    "method": "POST",
-    "path": "/api/agreements/<int:aid>/complete"
-  },
-  "DELETE /api/agreements/<int:aid>": {
-    "method": "DELETE",
-    "path": "/api/agreements/<int:aid>"
-  },
-  "POST /api/agreements/claimable/delete": {
-    "method": "POST",
-    "path": "/api/agreements/claimable/delete"
-  },
-  "POST /api/agreements/<int:aid>/uncomplete": {
-    "method": "POST",
-    "path": "/api/agreements/<int:aid>/uncomplete"
-  },
-  "GET /api/agreements/departments": {
-    "method": "GET",
-    "path": "/api/agreements/departments"
-  },
-  "GET /api/agreements/claimable": {
-    "method": "GET",
-    "path": "/api/agreements/claimable"
-  },
-  "POST /api/agreements/claim": {
-    "method": "POST",
-    "path": "/api/agreements/claim"
-  },
-  "GET /api/agreements/claimed": {
-    "method": "GET",
-    "path": "/api/agreements/claimed"
-  },
-  "GET /api/agreements/contract-library": {
-    "method": "GET",
-    "path": "/api/agreements/contract-library"
-  },
   "POST /api/ai/search": {
     "method": "POST",
     "path": "/api/ai/search"
@@ -496,18 +448,6 @@ export const backendCatalog = {
   "POST /api/exports/xlsx": {
     "method": "POST",
     "path": "/api/exports/xlsx"
-  },
-  "POST /api/finance/bills/query": {
-    "method": "POST",
-    "path": "/api/finance/bills/query"
-  },
-  "GET /api/finance/bills/<int:bill_id>": {
-    "method": "GET",
-    "path": "/api/finance/bills/<int:bill_id>"
-  },
-  "POST /api/finance/bills/<int:bill_id>/<command>": {
-    "method": "POST",
-    "path": "/api/finance/bills/<int:bill_id>/<command>"
   },
   "GET /api/erp/contracts": {
     "method": "GET",

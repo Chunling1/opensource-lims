@@ -59,7 +59,7 @@ it('supports optional CMA for NCSA and preserves saved choices during loading',(
  field().binding.set({},'CNAS');expect(c.s.seal).toBe('CNAS')
  field().binding.set({},'CMA + CNAS');expect(c.s.seal).toBe('CMA + CNAS')
  c.readOnly=true;field().binding.set({},'CNAS');expect(c.s.seal).toBe('CMA + CNAS')
- c.readOnly=false;c.s.centerPrefix='NCSA';expect(field().disabled).toBe(true)
+ c.readOnly=false;c.s.centerPrefix='LAB';expect(field().disabled).toBe(true)
  field().binding.set({},'CNAS');expect(c.s.seal).toBe('CMA + CNAS')
 })
 

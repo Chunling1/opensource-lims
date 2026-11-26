@@ -43,5 +43,5 @@ export const navigation: NavigationGroup[] = modules.map(module=>({
 navigation.find(g=>g.id==='dashboard')?.children.push(...workbenches.map(w=>({label:w.title,to:`/dashboard/${w.id}`,icon:w.icon,workbench:w.id})))
 
 // Keep the supplied template's contiguous sidebar sections and workflow order.
-const moduleOrder = ['dashboard','entrust','sample','testing','report','finance','quality','system','statistics']
+const moduleOrder = ['dashboard','entrust','sample','testing','report','quality','system']
 navigation.sort((a,b)=>moduleOrder.indexOf(a.id)-moduleOrder.indexOf(b.id))

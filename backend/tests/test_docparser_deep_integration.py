@@ -350,3 +350,30 @@ def test_hyperlink_and_internal_reference_keep_renderable_text(application):
     validate_docx(blob)
     assert 'Reference website' in package_text(blob)['word/document.xml']
     assert 'Table 1' in package_text(blob)['word/document.xml']
+
+
+def test_department_center_conflict_fails_closed(monkeypatch):
+    from app import docparser_field_only as dfo
+
+    # 1) Explicit center prefix conflict: LAB report_no with NCSA explicit center must fail closed
+    r_explicit = SimpleNamespace(
+        report_no='LAB-2026G-0001',
+        sample_no='2026G-0001',
+        entrust_no='WT-2026-0001',
+        department='空调测试部',
+        detail={'rawSample': {'reportType': '产品报告', 'centerPrefix': 'NCSA', 'testDept': '空调测试部'}},
+    )
+    with pytest.raises(ValueError, match='报告标题/检测中心不一致'):
+        dfo.profile_for(r_explicit)
+
+    # 2) Implicit department-rule center conflict: non-LAB prefix conflicting with matched department center must fail closed
+    monkeypatch.setattr(dfo, 'CENTERS', {**dfo.CENTERS, 'DEMO': '示例检测中心'})
+    r_dept = SimpleNamespace(
+        report_no='DEMO-2026G-0002',
+        sample_no='2026G-0002',
+        entrust_no='WT-2026-0002',
+        department='空调测试部',
+        detail={'rawSample': {'reportType': '产品报告', 'testDept': '空调测试部'}},
+    )
+    with pytest.raises(ValueError, match='报告编号前缀与出具部门所属检测中心不一致'):
+        dfo.profile_for(r_dept)

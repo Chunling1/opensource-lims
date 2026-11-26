@@ -148,17 +148,8 @@ export async function platformAdapter<T>(path: string, method: string, data?: un
     return {items:result.rows.map(row=>({id:string(row.code||row.name),name:row.name})),total:result.total,page,pageSize:size} as T
   }
   if (path === '/contracts/query' && method === 'POST') {
-    if (query.from || query.to) throw new AppError('UNAVAILABLE','平台合同库接口未提供签订日期，不能以登记日期代替此筛选。')
-    if (query.ownDepartment) {
-      const rows = await scopedRows('/api/agreements/query',undefined,signal)
-      const mapped=rows.filter(row=>row.status==='已登记' && row.department===profile.value?.dataScope.department).map(row=>({id:row.agreementNo,code:row.agreementNo,name:row.projectName,customer:row.client,projectName:row.projectName,projectAddress:row.info?.projectAddr||'',erpProjectType:row.erpProjectType||row.erpType||'',erpContract:row.erpProjectNo||'',departmentId:row.department,signedDate:'',constructionCompany:row.info?.constructionCompany||'',registrationStatus:'已登记'}))
-      const {ownDepartment:_own,...filters}=query
-      return pageRows(mapped,filters) as T
-    }
-    const result=await platformRequest<{rows:Row[]}>('/api/agreements/contract-library',{signal})
-    if (!Array.isArray(result.rows)) throw new AppError('UNAVAILABLE','平台合同库返回结构异常。')
     const {ownDepartment:_own,...filters}=query
-    return pageRows(result.rows.map(row=>({id:row.contractNo,code:row.contractNo,name:row.projectName,customer:row.client,projectName:row.projectName,projectAddress:row.projectAddr,erpProjectType:row.erpType||row.category,erpContract:row.projectCode||'',departmentId:row.bizDept||'',signedDate:'',constructionCompany:'',registrationStatus:'已登记'})),filters) as T
+    return pageRows([],filters) as T
   }
   const saveMatch = /^\/commissions(?:\/(\d+))?$/.exec(path)
   if(saveMatch && (method === 'PUT' || method === 'POST')) {

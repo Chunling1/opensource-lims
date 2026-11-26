@@ -74,46 +74,20 @@ export function fetchFinanceBills(payload: {
   page?: number
   size?: number
   all?: boolean
-}) {
-  if (!USE_BACKEND) {
-    const nodeStatuses: Record<string, string[]> = {
-      pricing: ['待计价'], payment_registration: ['待收款'], payment_confirmation: ['待收款确认'],
-      invoice: ['待开票'], settlement: ['待结算'], account_refund: ['已结算', '部分退款'],
-    }
-    const keyword = String(payload.keyword || '').trim().toLowerCase()
-    const matched = (demoFinanceBills as FinanceBill[]).filter((row) =>
-      (nodeStatuses[payload.node] || []).includes(row.status)
-      && (!keyword || `${row.billNo} ${row.entrustNo} ${row.contractNo} ${row.client} ${row.projectName}`.toLowerCase().includes(keyword)),
-    )
-    const page = payload.page || 1
-    const size = payload.size || 20
-    return Promise.resolve({
-      rows: matched.slice((page - 1) * size, page * size), total: matched.length, page, size,
-      nodeStatuses: nodeStatuses[payload.node] || [],
-    })
-  }
-  return request<FinancePageResult>('/api/finance/bills/query', {
-    method: 'POST', body: JSON.stringify(payload),
+}): Promise<FinancePageResult> {
+  return Promise.resolve({
+    rows: [],
+    total: 0,
+    page: payload.page || 1,
+    size: payload.size || 20,
+    nodeStatuses: [],
   })
 }
 
-export function fetchFinanceBill(id: number, node: string) {
-  if (!USE_BACKEND) {
-    const bill = (demoFinanceBills as FinanceBill[]).find((item) => item.id === id)
-    if (!bill) return Promise.reject(new Error('演示费用单不存在'))
-    return Promise.resolve({
-      bill,
-      events: [{ id: id * 10, action: '演示节点', userName: '演示财务员', createdAt: bill.updatedAt, message: `当前节点：${node}`, before: null, after: { status: bill.status } }],
-    })
-  }
-  return request<{ bill: FinanceBill; events: FinanceEvent[] }>(
-    `/api/finance/bills/${id}?node=${encodeURIComponent(node)}`,
-  )
+export function fetchFinanceBill(_id: number, _node: string): Promise<{ bill: FinanceBill; events: FinanceEvent[] }> {
+  return Promise.reject(new Error('开源版未启用财务管理模块'))
 }
 
-export function runFinanceCommand(id: number, command: string, payload: Record<string, unknown>) {
-  if (!USE_BACKEND) return Promise.reject(new Error('本地演示模式不会保存财务操作'))
-  return request<FinanceBill>(`/api/finance/bills/${id}/${command}`, {
-    method: 'POST', body: JSON.stringify(payload),
-  })
+export function runFinanceCommand(_id: number, _command: string, _payload: Record<string, unknown>): Promise<FinanceBill> {
+  return Promise.reject(new Error('开源版未启用财务管理模块'))
 }

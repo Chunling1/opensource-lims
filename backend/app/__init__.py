@@ -105,7 +105,6 @@ def create_app(config_object=None):
     from .blueprints.esign import bp as esign_bp
     from .blueprints.entrust import bp as entrust_bp
     from .blueprints.exports import bp as exports_bp
-    from .blueprints.finance import bp as finance_bp
     from .blueprints.permission_templates import bp as permission_templates_bp
     from .blueprints.public_portal import (
         admin_external_bp,
@@ -142,7 +141,6 @@ def create_app(config_object=None):
     app.register_blueprint(technical_subprojects_bp)
     app.register_blueprint(eln_bp)
     app.register_blueprint(exports_bp)
-    app.register_blueprint(finance_bp)
     app.register_blueprint(customers_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_external_bp)

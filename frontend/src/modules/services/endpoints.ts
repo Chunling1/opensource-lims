@@ -19,7 +19,7 @@ export const inspectionApi = {
   testingTasks: (params: QueryParams) => request<PageResult<unknown>>('/api/testing/tasks/query', asPost(params)),
   reports: (params: QueryParams) => request<PageResult<unknown>>('/api/reports/query', asPost(params)),
   approvals: (params: QueryParams) => request<PageResult<unknown>>('/api/approvals/query', asPost(params)),
-  financeBills: (params: QueryParams) => request<PageResult<unknown>>('/api/finance/bills/query', asPost(params)),
+  // financeBills removed in open-source edition (D-150)
   qualityAssets: (params: QueryParams) => request<PageResult<unknown>>('/api/quality/assets/query', asPost(params)),
 }
 

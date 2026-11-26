@@ -1069,7 +1069,10 @@ const canSelectSampleContract = computed(() => !readOnly.value && (
 ))
 function onSampleContractSelected(contract?: Agreement) {
   if (!canSelectSampleContract.value || submitting.value) return
-  if (!contract) return ElMessage.warning('样品必须保留关联合同，请选择另一份已登记合同')
+  if (!contract) {
+    sampleSelectedContract.value = undefined
+    return
+  }
   if (contract.agreementNo === sampleEntrust.contractNo) return
   sampleSelectedContract.value = contract
   Object.assign(sampleEntrust, {

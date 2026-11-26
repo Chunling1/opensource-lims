@@ -2957,7 +2957,7 @@ def update_testinfo(report_no):
     # 三库仪器校验使用完整试验区间；testDate保留为历史兼容的结束日期。
     standard_names = load_report_standard_names(standard_values, raw_sample.get("standardItemIds")) if standard_show_name else {}
     standard_records = load_report_standard_records(standard_values, raw_sample.get("standardItemIds"))
-    if not refresh_references and not correcting("reports"):
+    if not refresh_references and (not correcting("reports") or standard_values == (previous_input.get("standards") or [])):
         standard_names = previous_input.get('standardNames', {})
         standard_records = previous_input.get('standardRecords', [])
     standard_display = format_report_standards(
