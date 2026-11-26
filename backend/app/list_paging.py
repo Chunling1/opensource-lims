@@ -441,7 +441,19 @@ def apply_filters(query, body, fields):
     term=str(body.get('contains') or body.get('keyword') or body.get('code') or '').strip()
     if term:
         key='code' if body.get('code') else body.get('searchField') or 'all'
-        if key != 'all': candidates=[field(key)]
+        is_sqlite = bool(getattr(db.engine, 'dialect', None) and db.engine.dialect.name == 'sqlite')
+        if key == 'all' and is_sqlite and 'id' not in fields:
+            # SQLite LALR parser overflows when combining 10+ deeply nested JSON CASE expressions in one OR clause.
+            candidates = [
+                func.coalesce(cast(col, Text), '')
+                for col in (
+                    Report.report_no, Report.sample_no, Report.entrust_no,
+                    Report.client, Report.project, Report.project_name,
+                    Report.department, Report.owner, Report.detail,
+                    Entrust.client, Entrust.project_name, Entrust.project_type,
+                )
+            ]
+        elif key != 'all': candidates=[field(key)]
         else:
             keys = all_search_keys(body, fields)
             candidates=[field(k) for k in dict.fromkeys(keys) if k in fields]

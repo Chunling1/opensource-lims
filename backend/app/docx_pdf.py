@@ -315,11 +315,15 @@ def _report_number_line_metrics(page, report_no):
                 if expected not in actual:
                     continue
                 baseline = float(span["origin"][1])
+                if baseline > 180.0:
+                    continue
                 same_line = [
                     candidate for candidate in spans
                     if abs(float(candidate["origin"][1]) - baseline) <= 2.0
                 ]
                 left_margin = min(float(candidate["bbox"][0]) for candidate in same_line)
+                if left_margin > float(page.rect.width) * 0.35:
+                    continue
                 return baseline, float(span["size"]), left_margin
     return None
 

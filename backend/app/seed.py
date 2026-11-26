@@ -665,12 +665,7 @@ def _upgrade_inplace():
     # 列补齐已在 seed_all → _ensure_columns 提前完成
     _seed_agreements()  # 新增 agreements 表的示例数据（幂等）
 
-    # 1) 同步检测项目为新集合（清理旧项目，补齐新项目 + 标准步骤）
-    want_codes = {p["code"] for p in seed_data.PROJECTS}
-    for p in Project.query.all():
-        if p.code not in want_codes:
-            db.session.delete(p)
-    db.session.flush()
+    # 1) 补齐默认检测项目 + 标准步骤（保留客户管理员自定义新建的检测方案与序列，禁止删除）
     for proj in seed_data.PROJECTS:
         p = Project.query.filter_by(code=proj["code"]).first()
         if not p:

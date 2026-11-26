@@ -630,24 +630,35 @@ def _execute_report_action(
         from ...report_delivery import sealed_current_flow, sealed_file_integrity_error
         version_id = report.approved_document_version_id or report.current_document_version_id
         flow = sealed_current_flow(report)
-        if not flow:
+        esign_on = bool(current_app.config.get("ESIGN_ENABLED"))
+        if flow:
+            integrity_error = sealed_file_integrity_error(flow)
+            if integrity_error:
+                return ReportCommandResult(1, integrity_error)
+        elif esign_on:
             return ReportCommandResult(1, '当前批准版本没有已完成盖章的正式文件，不能发放')
-        integrity_error = sealed_file_integrity_error(flow)
-        if integrity_error:
-            return ReportCommandResult(1, integrity_error)
+        elif not version_id:
+            return ReportCommandResult(1, '当前报告没有已批准的正式文档版本，不能发放')
         from ...report_date_policy import report_date_error
         error = report_date_error(report, 'release', business_today())
         if error:
             return ReportCommandResult(1, error)
         detail = dict(report.detail or {})
-        detail['reportDelivery'] = {'released': True, 'versionId': version_id,
-            'sealedFlowId': flow.id, 'releasedBy': user.account, 'releasedAt': str(business_today())}
+        detail['reportDelivery'] = {
+            'released': True,
+            'versionId': version_id,
+            'sealedFlowId': flow.id if flow else None,
+            'offlineRelease': not bool(flow),
+            'releasedBy': user.account,
+            'releasedAt': str(business_today()),
+        }
         report.detail = detail
         report.status = '已发放'
         add_operation_audit(action_code, 'report', report.report_no, category='workflow',
                             before=before_row, after=report.to_row(), actor=user)
         db.session.commit()
-        return ReportCommandResult(0, '报告发放完成，所属部门人员可下载正式盖章报告', report.to_row())
+        msg = '报告发放完成，所属部门人员可下载正式盖章报告' if flow else '报告发放完成（线下签章模式），所属部门人员可查询下载正式报告'
+        return ReportCommandResult(0, msg, report.to_row())
     if action_code == "report.archive.pass":
         sealed_pending = report.status == '待打印' and report.to_row()['dataStatus'] == SEALED
         if report.status not in {"待发放", "已发放"} and not sealed_pending:

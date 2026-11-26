@@ -10,7 +10,7 @@ RELEASED = '报告发放完成'
 
 def delivery_released(report):
     record = (report.detail or {}).get('reportDelivery') or {}
-    return bool(record.get('released') is True and record.get('sealedFlowId') and record.get('versionId') and record.get('versionId') ==
+    return bool(record.get('released') is True and (record.get('sealedFlowId') or record.get('offlineRelease')) and record.get('versionId') and record.get('versionId') ==
                 (report.approved_document_version_id or report.current_document_version_id)
                 and report.status == '已发放' and report.archive_state == '归档完成')
 
