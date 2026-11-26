@@ -677,30 +677,26 @@ export interface AgreementDepartment {
   isLeaf: boolean
 }
 
-// 合同登记可用组织
+// 委托登记可用部门组织
 export function fetchDepartments() {
-  return request<{ rows: AgreementDepartment[] }>('/api/agreements/departments').then((d) => d.rows)
+  return request<{ rows: AgreementDepartment[] }>('/api/entrust/departments').then((d) => d.rows)
 }
-export function fetchClaimableContracts() {
-  return request<{ rows: ErpContract[] }>('/api/agreements/claimable').then((d) => d.rows)
+export function fetchClaimableContracts(): Promise<ErpContract[]> {
+  return Promise.resolve([])
 }
-export function deleteClaimableContract(contractNo: string) {
-  return request<{ agreementNo: string }>('/api/agreements/claimable/delete', {
-    method: 'POST',
-    body: JSON.stringify({ contractNo }),
-  })
+export function deleteClaimableContract(_contractNo: string): Promise<{ agreementNo: string }> {
+  return Promise.resolve({ agreementNo: '' })
 }
-export function claimContract(payload: { contractNo: string; department: string }) {
-  return request<Agreement>('/api/agreements/claim', { method: 'POST', body: JSON.stringify(payload) })
+export function claimContract(_payload: { contractNo: string; department: string }): Promise<Agreement> {
+  return Promise.reject(new Error('开源版不包含合同认领功能'))
 }
-export function fetchClaimedContracts() {
-  return request<{ rows: Agreement[] }>('/api/agreements/claimed').then((d) => d.rows)
+export function fetchClaimedContracts(): Promise<Agreement[]> {
+  return Promise.resolve([])
 }
-export function fetchContractSelectionPage(keyword = '', page = 1, signal?: AbortSignal, number = '') {
-  const params = new URLSearchParams({ keyword, page: String(page), size: '20', number })
-  return request<{ rows: Agreement[]; total: number; page: number; size: number; scope?: 'all' | 'department' }>(
-    `/api/agreements/claimed?${params}`, { signal },
-  )
+export function fetchContractSelectionPage(
+  _keyword = '', page = 1, _signal?: AbortSignal, _number = '',
+): Promise<{ rows: Agreement[]; total: number; page: number; size: number; scope?: 'all' | 'department' }> {
+  return Promise.resolve({ rows: [], total: 0, page, size: 20, scope: 'department' })
 }
 
 // 委托单（一单多样品）

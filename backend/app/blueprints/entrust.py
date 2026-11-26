@@ -67,6 +67,38 @@ def _next_no():
     return allocate_entrust_number(business_today().year)
 
 
+@bp.get("/departments")
+@require_auth
+def list_departments():
+    from ..models import Department
+    depts = Department.query.order_by(Department.id).all()
+    by_id = {d.id: d for d in depts}
+    parent_ids = {d.parent_id for d in depts if d.parent_id is not None}
+
+    def _full_name(dept):
+        parts = []
+        cur = dept
+        seen = set()
+        while cur is not None and cur.id not in seen:
+            seen.add(cur.id)
+            parts.append(cur.name)
+            cur = by_id.get(cur.parent_id)
+        return "/".join(reversed(parts))
+
+    rows = [
+        {
+            "id": d.id,
+            "name": d.name,
+            "fullName": _full_name(d),
+            "leafName": d.name,
+            "parentId": d.parent_id,
+            "isLeaf": d.id not in parent_ids,
+        }
+        for d in depts
+    ]
+    return jsonify({"code": 0, "message": "ok", "data": {"rows": rows}})
+
+
 @bp.get("/next-no")
 @require_auth
 def next_no():
