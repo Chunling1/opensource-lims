@@ -1,12 +1,17 @@
 # Open-LIMS (Tabler Edition)
 
-开源实验室信息管理系统（LIMS），基于 **Vue 3 + TypeScript + Tabler (MIT)** 前端与 **Python Flask + SQLAlchemy** 后端构建，采用 **Apache-2.0** 开源许可协议。
+> **许可提示 / License Notice**：本项目采用 **Open-LIMS 非商业使用许可协议 v1.0**（源码可见，详见 [LICENSE](./LICENSE)）。
+> - **允许**：个人学习、研究、评估及**非商业个人自用**。
+> - **禁止商用**：任何企业/商业检测机构生产部署、对外提供 SaaS/托管服务、二次开发商业交付或销售，**均须事先获取版权方书面商业授权**。
+> - **在线体验**：https://openlims.net/demo/ ｜ **官网与商业授权**：https://openlims.net/ （邮箱：`15652668137@163.com`）
+
+实验室信息管理系统（LIMS），基于 **Vue 3 + TypeScript + Tabler (MIT)** 前端与 **Python Flask + SQLAlchemy** 后端构建。
 
 ## 目录结构
 
 - `backend/`：Flask + SQLAlchemy 后端服务（支持 SQLite 开箱即用，也可通过 `DATABASE_URL` 切换至 MySQL / PostgreSQL）
 - `frontend/`：Vue 3 + TypeScript + Pinia + Tabler UI 前端工程
-- `LICENSE`：Apache-2.0 开源许可证
+- `LICENSE`：Open-LIMS 非商业使用许可协议 v1.0（禁止未经授权商用）
 - `THIRD_PARTY.txt`：第三方依赖与字体许可清单
 
 ## 核心功能模块
