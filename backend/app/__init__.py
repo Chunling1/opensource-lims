@@ -150,6 +150,29 @@ def create_app(config_object=None):
     from .readiness import install_readiness
     install_readiness(app)
 
+    @app.before_request
+    def _demo_mode_account_guard():
+        if os.environ.get("DEMO_MODE") != "1":
+            return None
+        from flask import request
+        path = request.path or ""
+        method = request.method.upper()
+        protected_accounts = {"admin", "sim_registrar", "sim_tester", "sim_approver"}
+        if path in ("/api/auth/change-password", "/api/auth/forgot-password") and method == "POST":
+            body = request.get_json(silent=True) or {}
+            if str(body.get("account") or "").strip() in protected_accounts or path == "/api/auth/change-password":
+                return jsonify({"code": 1, "message": "在线体验环境不允许修改预置体验账号密码", "data": None}), 200
+        if path.startswith("/api/admin/users/") and method in ("DELETE", "POST", "PUT"):
+            parts = path.strip("/").split("/")
+            if len(parts) >= 4 and parts[3].isdigit():
+                from .models import User
+                target = db.session.get(User, int(parts[3]))
+                if target and target.account in protected_accounts:
+                    body = request.get_json(silent=True) or {}
+                    if method == "DELETE" or path.endswith("/reset-password") or body.get("enabled") is False:
+                        return jsonify({"code": 1, "message": "在线体验环境不允许停用、删除或重置预置体验账号", "data": None}), 200
+        return None
+
     @app.get("/api/health")
     def health():
         return jsonify({

@@ -13,6 +13,20 @@ import { validateNewPassword } from '../../services/auth/passwordPolicy'
 import { loginReturn } from '../../router/modules/auth'
 defineProps<{ sessionExpired?: boolean }>()
 const route = useRoute(), router = useRouter()
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === '1'
+const demoAccounts = [
+  { account: 'admin', password: 'LimsDemo!2026', label: '系统管理员', desc: '组织 / 标准库 / 仪器 / 检测方案' },
+  { account: 'sim_registrar', password: 'SimRole!2026', label: '张受理 · 受理与样品员', desc: '委托登记 / 双序列收样 / 合同评审' },
+  { account: 'sim_tester', password: 'SimRole!2026', label: '李主检 · 主检工程师', desc: '不可用仪器拦截 / 数据录入 / 报告' },
+  { account: 'sim_approver', password: 'SimRole!2026', label: '王审签 · 审核批准签发', desc: '审核 / 批准 / 签发 / 归档发放' },
+] as const
+async function quickDemoLogin(item: (typeof demoAccounts)[number]) {
+  if (busy.value) return
+  account.value = item.account
+  password.value = item.password
+  await nextTick()
+  await submit()
+}
 const account = ref(rememberedAccount()), password = ref(''), remember = ref(!!account.value), busy = ref(false)
 const mustChange = ref(false), newPassword = ref(''), confirmation = ref('')
 const errors = ref<Record<string, string>>({}), message = ref('')
@@ -94,6 +108,19 @@ async function focusError() { await nextTick(); document.querySelector<HTMLEleme
       <div class="form-check"><input id="remember-account" v-model="remember" class="form-check-input" type="checkbox" :disabled="busy" /><label class="form-check-label" for="remember-account">记住账号</label></div>
       <div class="mt-4"><button type="submit" class="btn btn-success w-100" :disabled="busy">{{ checkingAccount ? '正在检查登录状态…' : busy ? '正在提交…' : mustChange ? '修改密码' : '登录' }}</button></div>
     </form>
+    <div v-if="isDemoMode && !mustChange" class="mt-4 pt-3 border-top">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="fw-semibold small text-body">在线体验 · 一键角色登录</span>
+        <span class="badge bg-azure-lt text-azure">每 2 小时自动重置</span>
+      </div>
+      <div class="d-grid gap-2">
+        <button v-for="item in demoAccounts" :key="item.account" type="button" class="btn btn-outline-primary btn-sm text-start d-flex justify-content-between align-items-center" :disabled="busy" @click="quickDemoLogin(item)">
+          <span><strong>{{ item.label }}</strong><small class="d-block text-muted fw-normal">{{ item.desc }}</small></span>
+          <span class="badge bg-light text-dark ms-2">{{ item.account }}</span>
+        </button>
+      </div>
+      <p class="text-muted small mt-2 mb-0">当前为 Open-LIMS 公共在线体验环境，请勿上传真实敏感文件。</p>
+    </div>
   </AuthLayout>
   <BootstrapModal :open="captchaOpen" title="安全验证" compact scrollable @close="closeCaptcha">
     <AjCaptcha v-if="captchaOpen" :account="account.trim()" @reset="resetProof" @verified="verified" />
