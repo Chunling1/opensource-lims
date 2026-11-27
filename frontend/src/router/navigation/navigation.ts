@@ -26,7 +26,6 @@ export const templateNavigation: NavigationGroup[] = [
   { id: 'overview', label: '首页', icon: 'ti ti-dashboard', section: 'overview', children: [
     { label: '工作台', to: '/dashboard', icon: 'ti ti-dashboard' },
     { label: '我的待办', to: '/work', icon: 'ti ti-checklist' },
-    { label: '通知中心', to: '/notifications', icon: 'ti ti-bell' },
   ] },
   { id: 'commissions', label: '委托管理', icon: icons.commissions!, section: 'business', children: [...commissionPages] },
   { id: 'samples', label: '样品管理', icon: icons.samples!, section: 'business', children: [...samplePages] },
