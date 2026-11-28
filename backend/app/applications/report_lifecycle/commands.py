@@ -452,6 +452,9 @@ def apply_return_plan(report, user, action_code: str, note: str, return_mode: st
     detail["signatures"] = signatures
     report.detail = detail
     report.status = "委托更改中" if plan["mode"] in {"entrust_only", "entrust_and_data"} else "检测更改中"
+    # Clear stale controlled/approved pointers on return so pre-return PDFs are never served as current.
+    report.current_document_version_id = None
+    report.approved_document_version_id = None
     return plan
 
 
@@ -733,6 +736,7 @@ def _execute_report_action(
             report.detail = detail
         if action_code in ("report.approval.undo", "report.print.undo"):
             report.stamped = False
+            report.approved_document_version_id = None
         undo_row = report.to_row()
         add_operation_audit(action_code, "report", report.report_no, category="workflow", before=before_row, after=undo_row, actor=user)
         db.session.commit()

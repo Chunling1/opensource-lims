@@ -1257,7 +1257,7 @@ async function persistTestInfo(validateForCompletion: boolean, completing = fals
           detail.value = updated
           await Promise.all([loadElnStatus(), refreshDocumentWorkflow(current)])
         }
-        if (current()) { preparationError.value = ''; void refreshPreview() }
+        if (current()) { preparationError.value = ''; void refreshPreview(true) }
       } catch (error) {
         if (current()) preparationError.value = `检测数据已保存，关联资料刷新失败。${error instanceof Error ? error.message : ''}`
       }
@@ -1376,8 +1376,16 @@ async function completeChange() {
     throw new Error('报告已切换，本次完成操作已取消')
   }
   saving.value = true
-  completionFeedback.value = '检测数据已保存，正在核对报告预览并提交检测更改。'
+  completionFeedback.value = '检测数据已保存，正在核对最新报告预览并提交检测更改。'
   try {
+    const preview = await completePreviewState(row.reportNo, reportDetailView.value)
+    if (!formOpen.value || formReadOnly.value || selected.value?.reportNo !== row.reportNo) {
+      throw new Error('报告已切换，本次完成操作已取消')
+    }
+    if (preview.status !== 'ready') {
+      void refreshPreview(true)
+      throw new Error('请先打开最新完整报告预览并点击“报告确认”，再完成检测更改')
+    }
     const result = await changeTestComplete(row.reportNo)
     await closeCompletedEntry(result.esignPending ? result.message || '本节点已确认，等待主检签署。' : `检测更改完成，已进入「${result.status}」`, result.esignPending, result.esignPrepareError)
     return true

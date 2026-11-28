@@ -2031,6 +2031,9 @@ def contract_review(report_no):
         )
         finance_capture(r, "CONTRACT_REVIEW_COMPLETED", user)
         db.session.commit()
+        if after_review in {"review", "data_change", "data_entry"}:
+            from ..preview_cache import schedule_after_save
+            schedule_after_save(r)
         message = f"{r.report_no} 合同评审通过，已进入「{r.status}」"
         if skipped_nodes:
             message += f"；按项目流程已跳过：{'、'.join(skipped_nodes)}"
@@ -2338,6 +2341,8 @@ def _save_entrust_change(report_no, *, complete):
         db.session.flush()
         saved_row = r.to_row()
         db.session.commit()
+        from ..preview_cache import schedule_after_save
+        schedule_after_save(r)
         return jsonify({"code": 0, "message": "已保存修改，仍处于委托更改中，尚未提交", "data": saved_row})
     # Every entrust change, including an issued correction, requires re-review.
     # Contract selection may autoflush JSON; assign a new object after that flush.
@@ -2358,6 +2363,8 @@ def _save_entrust_change(report_no, *, complete):
     db.session.flush()
     saved_row = r.to_row()
     db.session.commit()
+    from ..preview_cache import schedule_after_save
+    schedule_after_save(r)
     return jsonify({"code": 0, "message": f"{r.report_no} 委托更改完成，重新进入合同评审", "data": saved_row})
 
 
@@ -3059,7 +3066,9 @@ def update_testinfo(report_no):
     )
     if result.response_payload().get('code') == 0:
         from ..preview_cache import schedule_after_save
-        schedule_after_save(r)
+        fresh_report = Report.query.filter_by(report_no=r.report_no).first()
+        if fresh_report is not None:
+            schedule_after_save(fresh_report)
     payload = result.response_payload()
     return jsonify(payload), result.http_status
 

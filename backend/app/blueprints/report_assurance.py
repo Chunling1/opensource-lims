@@ -179,7 +179,7 @@ def report_artifact(report_no):
             artifact['raw'] = read_file_bytes(flow.signed_file)
     else:
         from ..report_preview_revision import frozen_original
-        if not frozen_original(report) and report.status not in {'待校核', '待审核', '待批准'}:
+        if not frozen_original(report) and (report.status not in {'待校核', '待审核', '待批准'} or not report.current_document_version_id):
             can_preview, can_download = allowed('report.pdf.preview'), allowed('report.pdf.download')
             if (file_request or request.method == 'POST') and not (can_download if download else can_preview):
                 return fail('无报告原件预览或下载权限', 403)

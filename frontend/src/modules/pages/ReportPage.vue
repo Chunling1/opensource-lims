@@ -792,9 +792,23 @@ function decisionTemplateField(pattern: RegExp, fallback = '—'): string {
 }
 
 
+let decisionPreviewVersionKey = ''
+function currentDecisionPreviewKey(): string {
+  const r = selectedReport.value as (Record<string, unknown> | undefined)
+  if (!r) return ''
+  return [
+    r.reportNo ?? '',
+    r.editVersion ?? '',
+    r.currentDocumentVersionId ?? '',
+    r.approvedDocumentVersionId ?? '',
+    r.status ?? '',
+  ].join('|')
+}
+
 async function loadDecisionReportPreview(_retry = false) {
   const no = selectedReport.value?.reportNo
   if (!no || !fullReviewPage.value || !formOpen.value) return
+  const expectedKey = currentDecisionPreviewKey()
   const requestId = ++decisionPreviewRequestId
   decisionPreviewLoading.value = true
   decisionPreviewError.value = ''; decisionPreviewIssue.value = undefined; decisionPreviewSigned.value = false
@@ -813,6 +827,7 @@ async function loadDecisionReportPreview(_retry = false) {
     const originalUrl = await artifactObjectUrl(no, currentReportDetailView(), false, pageKey.value === 'print')
     if (requestId !== decisionPreviewRequestId || no !== selectedReport.value?.reportNo) { URL.revokeObjectURL(originalUrl); return }
     documentPdfUrl.value = originalUrl
+    decisionPreviewVersionKey = expectedKey
     const latest = await fetchReportArtifact(no, currentReportDetailView(), pageKey.value === 'print')
     if (requestId !== decisionPreviewRequestId || no !== selectedReport.value?.reportNo) return
     documentNotices.value = latest.preview?.notices || []
@@ -831,7 +846,8 @@ async function loadDecisionReportPreview(_retry = false) {
 async function openDecisionReportPreview() {
   const context = captureFormContext()
   if (!context) return
-  const hasAllowedPreview = documentPdfUrl.value || coverPdfUrl.value || (!USE_BACKEND && coverHtml.value)
+  const hasAllowedPreview = (documentPdfUrl.value || coverPdfUrl.value || (!USE_BACKEND && coverHtml.value))
+    && decisionPreviewVersionKey === currentDecisionPreviewKey()
   if (!hasAllowedPreview) await loadDecisionReportPreview()
   if (!isCurrentForm(context)) return
   const url = documentPdfUrl.value || coverPdfUrl.value

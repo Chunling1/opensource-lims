@@ -135,7 +135,11 @@ def source_key(report):
 def _locked(report):
     from .report_preview_revision import frozen_original
     from .functions.esign_stages import current_flow
-    return bool(current_flow(report)) or frozen_original(report) or report.status in {'待审核', '待批准'}
+    return (
+        bool(current_flow(report))
+        or frozen_original(report)
+        or (report.status in {'待审核', '待批准'} and bool(report.current_document_version_id))
+    )
 
 
 def _state(path):
@@ -159,7 +163,7 @@ def _state(path):
 
 def status(report):
     from .functions.esign_stages import current_flow
-    if report.status in {'待审核', '待批准'} or current_flow(report):
+    if (report.status in {'待审核', '待批准'} and bool(report.current_document_version_id)) or current_flow(report):
         from .blueprints.report_assurance import resolve_artifact
         artifact = resolve_artifact(report, metadata_only=True, original=True)
         return dict(status='ready', sourceHash='official-' + str(artifact['versionId']),
@@ -171,7 +175,7 @@ def status(report):
 
 def cached_pdf(report):
     from .functions.esign_stages import current_flow
-    if report.status in {'待审核', '待批准'} or current_flow(report):
+    if (report.status in {'待审核', '待批准'} and bool(report.current_document_version_id)) or current_flow(report):
         from .blueprints.report_assurance import resolve_artifact
         artifact = resolve_artifact(report, original=True)
         return artifact['raw'], dict(status='ready', sourceHash='official-' + str(artifact['versionId']),
@@ -261,7 +265,7 @@ def _enqueue(app, task, *, lane='default'):
 
 def prepare(report, retry=False):
     from .functions.esign_stages import current_flow
-    if report.status in {'待审核', '待批准'} or current_flow(report):
+    if (report.status in {'待审核', '待批准'} and bool(report.current_document_version_id)) or current_flow(report):
         return status(report)
     if _locked(report):
         return {'status': 'failed', 'message': '该报告已批准，请读取已批准或已签署的正式版本'}

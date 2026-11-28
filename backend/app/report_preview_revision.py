@@ -9,7 +9,7 @@ from datetime import datetime
 import threading
 
 from flask import current_app
-from .models import ReportAttachment, ReportDocumentContent, StoredFile
+from .models import Entrust, ReportAttachment, ReportDocumentContent, StoredFile
 from .report_documents import select_profile, snapshot_hash
 from .report_final_fields import approval_date
 
@@ -47,8 +47,16 @@ def revision_key(report, engine):
         ReportDocumentContent.id, ReportDocumentContent.updated_at,
     ).filter_by(report_no=report.report_no).first()
     profile = select_profile(report)
+    entrust_rev = (
+        Entrust.query.with_entities(Entrust.edit_version)
+        .filter_by(entrust_no=report.entrust_no)
+        .scalar()
+        if report.entrust_no
+        else None
+    )
     return snapshot_hash({'engine': engine, 'report': report.id,
-        'revision': report.edit_version, 'content': [str(v) for v in content] if content else None,
+        'revision': report.edit_version, 'entrustRevision': entrust_rev,
+        'content': [str(v) for v in content] if content else None,
         'attachments': [[str(v) for v in row] for row in attachments],
         'profile': profile.to_dict() if profile else None, 'approvalDate': approval_date(report)})
 
